@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --canvas: #F9F8F4;
+    --intense-black: #1A1A19;
+    --royal-gold: #F9BE08;
+    --classic-yellow: #EFD30B;
+    --silver-feather: #DFDFD9;
+  }
+
+  body {
+    background-color: #F9F8F4;
+    color: #1A1A19;
+    overflow-x: hidden;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom subtle scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #F9F8F4;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #DFDFD9;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B4B4AD;
+  }
+}
+
+@layer utilities {
+  .border-feather {
+    border-color: #DFDFD9;
+  }
+  .bg-canvas {
+    background-color: #F9F8F4;
+  }
+  .text-intense {
+    color: #1A1A19;
+  }
+  .bg-royal-gold {
+    background-color: #F9BE08;
+  }
+  .bg-classic-yellow {
+    background-color: #EFD30B;
+  }
+  .badge-tag {
+    letter-spacing: 0.05em;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
