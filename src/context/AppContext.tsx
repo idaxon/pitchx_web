@@ -1,13 +1,44 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Project, User, UserScore, TopicItem, NotificationItem, Comment, ProjectType, JobListing } from '../types';
+import {
+  Project,
+  User,
+  UserScore,
+  TopicItem,
+  NotificationItem,
+  Comment,
+  ProjectType,
+  JobListing,
+  RecruiterScore,
+  JobApplication,
+  ApplicationStatus,
+} from '../types';
 import { currentUser, mockUsers } from '../data/mockUsers';
 import { mockProjects } from '../data/mockProjects';
 import { mockTopics } from '../data/mockTopics';
 import { mockNotifications } from '../data/mockNotifications';
 import { initialComments } from '../data/mockComments';
+import {
+  currentRecruiterUser,
+  defaultRecruiterScore,
+  mockRecruiterJobs,
+  initialMockApplications,
+} from '../data/mockRecruiter';
 
-export type PageType = 'home' | 'explore' | 'profile' | 'topic' | 'analytics' | 'notifications' | 'bookmarks' | 'messages' | 'jobs' | 'retest';
+export type PageType =
+  | 'home'
+  | 'explore'
+  | 'profile'
+  | 'topic'
+  | 'analytics'
+  | 'notifications'
+  | 'bookmarks'
+  | 'messages'
+  | 'jobs'
+  | 'retest'
+  | 'login'
+  | 'signup';
 export type FeedTabType = 'for-you' | 'following' | 'trending' | 'latest';
+export type AuthRoleType = 'jobseeker' | 'recruiter';
 
 interface AppContextType {
   activePage: PageType;
@@ -33,6 +64,27 @@ interface AppContextType {
   appliedJobs: string[];
   setSearchQuery: (query: string) => void;
   setIsSearchOpen: (open: boolean) => void;
+  // Auth state & actions
+  isAuthenticated: boolean;
+  isAuthModalOpen: boolean;
+  authModalMode: 'signin' | 'signup';
+  authRole: AuthRoleType;
+  hasDismissedAuthScroll: boolean;
+  openAuthModal: (mode?: 'signin' | 'signup', role?: AuthRoleType) => void;
+  closeAuthModal: () => void;
+  dismissScrollAuth: () => void;
+  login: (details: { email: string; role?: AuthRoleType; name?: string }) => void;
+  logout: () => void;
+  switchRole: (role: AuthRoleType) => void;
+  // Recruiter state & actions
+  recruiterScore: RecruiterScore;
+  postedJobs: JobListing[];
+  jobApplications: JobApplication[];
+  isPostJobModalOpen: boolean;
+  openPostJobModal: () => void;
+  closePostJobModal: () => void;
+  postJob: (newJob: JobListing) => void;
+  updateApplicationStatus: (appId: string, status: ApplicationStatus) => void;
   // Actions
   navigateTo: (page: PageType, payload?: { topic?: TopicItem; user?: User }) => void;
   openProjectModal: (project: Project) => void;
@@ -66,6 +118,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notifications, setNotifications] = useState<NotificationItem[]>(mockNotifications);
   const [comments, setComments] = useState<Record<string, Comment[]>>(initialComments);
 
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signup');
+  const [authRole, setAuthRole] = useState<AuthRoleType>('jobseeker');
+  const [hasDismissedAuthScroll, setHasDismissedAuthScroll] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('pitchx_dismiss_auth_scroll') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const [selectedTopic, setSelectedTopic] = useState<TopicItem | null>(null);
   const [selectedUserProfile, setSelectedUserProfile] = useState<User | null>(null);
   const [activeProjectModal, setActiveProjectModal] = useState<Project | null>(null);
@@ -79,6 +144,81 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [searchQuery, setSearchQuery] = useState('');
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
+
+  // Recruiter states
+  const [recruiterScore, setRecruiterScore] = useState<RecruiterScore>(defaultRecruiterScore);
+  const [postedJobs, setPostedJobs] = useState<JobListing[]>(mockRecruiterJobs);
+  const [jobApplications, setJobApplications] = useState<JobApplication[]>(initialMockApplications);
+  const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
+
+  const openPostJobModal = () => setIsPostJobModalOpen(true);
+  const closePostJobModal = () => setIsPostJobModalOpen(false);
+
+  const postJob = (newJob: JobListing) => {
+    setPostedJobs((prev) => [newJob, ...prev]);
+    setRecruiterScore((prev) => ({
+      ...prev,
+      activeJobsCount: prev.activeJobsCount + 1,
+      jobPostsQuality: Math.min(99, prev.jobPostsQuality + 1),
+    }));
+  };
+
+  const updateApplicationStatus = (appId: string, status: ApplicationStatus) => {
+    setJobApplications((prev) =>
+      prev.map((app) => (app.id === appId ? { ...app, status } : app))
+    );
+  };
+
+  const switchRole = (newRole: AuthRoleType) => {
+    setAuthRole(newRole);
+    if (newRole === 'recruiter') {
+      setCurrUser(currentRecruiterUser);
+    } else {
+      setCurrUser(currentUser);
+    }
+  };
+
+  const openAuthModal = (mode?: 'signin' | 'signup', role?: AuthRoleType) => {
+    if (mode) setAuthModalMode(mode);
+    if (role) setAuthRole(role);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
+
+  const dismissScrollAuth = () => {
+    setHasDismissedAuthScroll(true);
+    try {
+      sessionStorage.setItem('pitchx_dismiss_auth_scroll', 'true');
+    } catch {
+      // ignore
+    }
+  };
+
+  const login = ({ email, role = 'jobseeker', name }: { email: string; role?: AuthRoleType; name?: string }) => {
+    setIsAuthenticated(true);
+    setAuthRole(role);
+    if (role === 'recruiter') {
+      setCurrUser({
+        ...currentRecruiterUser,
+        name: name || currentRecruiterUser.name,
+      });
+    } else {
+      const updatedUser: User = {
+        ...currentUser,
+        name: name || currentUser.name,
+        handle: (name ? name.toLowerCase().replace(/\s+/g, '') : currentUser.handle),
+      };
+      setCurrUser(updatedUser);
+    }
+    setIsAuthModalOpen(false);
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+  };
 
   const navigateTo = (page: PageType, payload?: { topic?: TopicItem; user?: User }) => {
     setActivePage(page);
@@ -353,6 +493,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         searchQuery,
         setSearchQuery,
         setIsSearchOpen,
+        // Auth state & actions
+        isAuthenticated,
+        isAuthModalOpen,
+        authModalMode,
+        authRole,
+        hasDismissedAuthScroll,
+        openAuthModal,
+        closeAuthModal,
+        dismissScrollAuth,
+        login,
+        logout,
+        switchRole,
+        // Recruiter state & actions
+        recruiterScore,
+        postedJobs,
+        jobApplications,
+        isPostJobModalOpen,
+        openPostJobModal,
+        closePostJobModal,
+        postJob,
+        updateApplicationStatus,
         navigateTo,
         openProjectModal,
         closeProjectModal,

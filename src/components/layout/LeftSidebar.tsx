@@ -21,14 +21,21 @@ import { useApp, PageType } from '../../context/AppContext';
 export const LeftSidebar: React.FC = () => {
   const {
     currentUser,
+    authRole,
+    switchRole,
+    recruiterScore,
+    openPostJobModal,
     activePage,
     navigateTo,
     openCreateModal,
+    openAuthModal,
     unreadNotificationsCount,
     projects,
   } = useApp();
 
   const savedCount = projects.filter((p) => p.isSaved).length;
+
+  const isRecruiter = authRole === 'recruiter';
 
   const navItems: { id: PageType; label: string; icon: React.ReactNode; badge?: string | number }[] = [
     { id: 'home', label: 'Home Feed', icon: <Home className="w-4 h-4" /> },
@@ -103,10 +110,10 @@ export const LeftSidebar: React.FC = () => {
         <div className="mt-3 p-3 bg-[#F9F8F4] border border-[#DFDFD9] rounded-lg">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1A19]/70">
-              Score
+              {isRecruiter ? 'Recruiter Trust Score' : 'Proof Score'}
             </span>
             <span className="text-xs font-black font-mono px-1.5 py-0.5 bg-[#F9BE08] text-[#1A1A19] rounded font-bold">
-              {currentUser.score.overall} / 100
+              {isRecruiter ? recruiterScore.overall : currentUser.score.overall} / 100
             </span>
           </div>
 
@@ -114,46 +121,60 @@ export const LeftSidebar: React.FC = () => {
           <div className="w-full bg-[#DFDFD9] h-1.5 rounded-full overflow-hidden mt-2">
             <div
               className="bg-[#1A1A19] h-full rounded-full transition-all"
-              style={{ width: `${currentUser.score.overall}%` }}
+              style={{ width: `${isRecruiter ? recruiterScore.overall : currentUser.score.overall}%` }}
             />
           </div>
 
           <div className="grid grid-cols-3 gap-1 mt-2.5 pt-2 border-t border-[#DFDFD9]/60 text-center text-[10px]">
             <div>
-              <span className="text-[#1A1A19]/50 block">Reputation</span>
-              <span className="font-bold text-[#1A1A19]">94/100</span>
-            </div>
-            <div>
-              <span className="text-[#1A1A19]/50 block">Rating</span>
-              <span className="font-bold text-[#1A1A19]">4.8 ★</span>
-            </div>
-            <div>
-              <span className="text-[#1A1A19]/50 block">Projects</span>
+              <span className="text-[#1A1A19]/50 block">Company Rep</span>
               <span className="font-bold text-[#1A1A19]">
-                {currentUser.projectsCount}
+                {isRecruiter ? `${recruiterScore.companyReputation}/100` : '94/100'}
+              </span>
+            </div>
+            <div>
+              <span className="text-[#1A1A19]/50 block">{isRecruiter ? 'Reviews' : 'Rating'}</span>
+              <span className="font-bold text-[#1A1A19]">
+                {isRecruiter ? `${(recruiterScore.customerRating / 20).toFixed(1)} ★` : '4.8 ★'}
+              </span>
+            </div>
+            <div>
+              <span className="text-[#1A1A19]/50 block">{isRecruiter ? 'Job Quality' : 'Projects'}</span>
+              <span className="font-bold text-[#1A1A19]">
+                {isRecruiter ? `${recruiterScore.jobPostsQuality}/100` : currentUser.projectsCount}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Re-Test Score Button */}
-        <button
-          onClick={() => navigateTo('retest')}
-          className="w-full mt-2 py-2 px-3 bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-[0.98] text-[#1A1A19] text-xs font-bold rounded-lg border border-[#1A1A19]/20 shadow-subtle flex items-center justify-center gap-1.5 transition-all group"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-[#1A1A19] group-hover:scale-110 transition-transform" />
-          <span>Re-Test Score</span>
-          <span className="text-[10px] font-mono font-black px-1.5 py-0.2 bg-[#1A1A19] text-[#F9BE08] rounded ml-1">
-            ₹499
-          </span>
-        </button>
+        {/* Action Button: Post Job / Re-Test */}
+        {isRecruiter ? (
+          <button
+            onClick={() => openPostJobModal()}
+            className="w-full mt-2 py-2 px-3 bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-[0.98] text-[#1A1A19] text-xs font-bold rounded-lg border border-[#1A1A19]/20 shadow-subtle flex items-center justify-center gap-1.5 transition-all group"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#1A1A19] group-hover:rotate-90 transition-transform" />
+            <span>Post a New Job</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => navigateTo('retest')}
+            className="w-full mt-2 py-2 px-3 bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-[0.98] text-[#1A1A19] text-xs font-bold rounded-lg border border-[#1A1A19]/20 shadow-subtle flex items-center justify-center gap-1.5 transition-all group"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#1A1A19] group-hover:scale-110 transition-transform" />
+            <span>Re-Test Score</span>
+            <span className="text-[10px] font-mono font-black px-1.5 py-0.2 bg-[#1A1A19] text-[#F9BE08] rounded ml-1">
+              ₹499
+            </span>
+          </button>
+        )}
 
-        {/* View Profile Button */}
+        {/* View Profile / Recruiter Dashboard Button */}
         <button
-          onClick={() => navigateTo('profile', { user: currentUser })}
+          onClick={() => isRecruiter ? navigateTo('jobs') : navigateTo('profile', { user: currentUser })}
           className="w-full mt-2 py-1.5 px-3 bg-white hover:bg-[#F9F8F4] text-[#1A1A19] text-xs font-semibold rounded-lg border border-[#DFDFD9] hover:border-[#1A1A19]/40 flex items-center justify-center gap-1 transition-all"
         >
-          <span>View Profile</span>
+          <span>{isRecruiter ? 'Manage Applications' : 'View Profile'}</span>
           <ArrowUpRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -218,14 +239,63 @@ export const LeftSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick Showcase CTA */}
-      <button
-        onClick={() => openCreateModal()}
-        className="w-full py-2.5 px-4 bg-[#1A1A19] hover:bg-[#2A2A28] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-subtle group transition-all"
-      >
-        <Plus className="w-4 h-4 text-[#F9BE08] transition-transform group-hover:rotate-90" />
-        <span>Publish Proof of Work</span>
-      </button>
+      {/* Quick Auth / Role Switch Trigger card */}
+      <div className="bg-gradient-to-br from-white to-[#F9F8F4] border border-[#DFDFD9] rounded-xl p-3 shadow-subtle flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-[#1A1A19]/60 font-bold">
+            Account Role Mode
+          </span>
+          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#F9BE08] text-[#1A1A19]">
+            {isRecruiter ? 'RECRUITER' : 'JOB SEEKER'}
+          </span>
+        </div>
+        <p className="text-xs text-[#1A1A19]/75 font-medium">
+          {isRecruiter
+            ? 'Hire verified builders based on score-gated proof of work.'
+            : 'Build verified proof score and get directly hired.'}
+        </p>
+        <div className="grid grid-cols-2 gap-1.5 mt-0.5">
+          <button
+            onClick={() => switchRole('jobseeker')}
+            className={`py-1.5 px-2 text-[11px] font-bold rounded-lg shadow-xs text-center transition-all ${
+              !isRecruiter
+                ? 'bg-[#1A1A19] text-[#F9BE08]'
+                : 'bg-white hover:bg-[#F9F8F4] text-[#1A1A19] border border-[#DFDFD9]'
+            }`}
+          >
+            Job Seeker {!isRecruiter && '✓'}
+          </button>
+          <button
+            onClick={() => switchRole('recruiter')}
+            className={`py-1.5 px-2 text-[11px] font-bold rounded-lg shadow-xs text-center transition-all ${
+              isRecruiter
+                ? 'bg-[#1A1A19] text-[#F9BE08]'
+                : 'bg-white hover:bg-[#F9F8F4] text-[#1A1A19] border border-[#DFDFD9]'
+            }`}
+          >
+            Recruiter {isRecruiter && '✓'}
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Showcase / Post CTA */}
+      {isRecruiter ? (
+        <button
+          onClick={() => openPostJobModal()}
+          className="w-full py-2.5 px-4 bg-[#F9BE08] hover:bg-[#EFD30B] text-[#1A1A19] rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-subtle group transition-all"
+        >
+          <Plus className="w-4 h-4 text-[#1A1A19] transition-transform group-hover:rotate-90" />
+          <span>Post a Gated Role</span>
+        </button>
+      ) : (
+        <button
+          onClick={() => openCreateModal()}
+          className="w-full py-2.5 px-4 bg-[#1A1A19] hover:bg-[#2A2A28] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-subtle group transition-all"
+        >
+          <Plus className="w-4 h-4 text-[#F9BE08] transition-transform group-hover:rotate-90" />
+          <span>Publish Proof of Work</span>
+        </button>
+      )}
     </aside>
   );
 };

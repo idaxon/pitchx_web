@@ -6,9 +6,13 @@ import { PitchXLogo } from '../common/PitchXLogo';
 export const Topbar: React.FC = () => {
   const {
     currentUser,
+    authRole,
+    switchRole,
+    openPostJobModal,
     unreadNotificationsCount,
     navigateTo,
     openCreateModal,
+    openAuthModal,
     setIsSearchOpen,
     activePage,
   } = useApp();
@@ -47,16 +51,62 @@ export const Topbar: React.FC = () => {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Create Post Button */}
+          {/* Role Mode Switcher (Job Seeker / Recruiter) */}
+          <div className="hidden md:flex items-center bg-white border border-[#DFDFD9] rounded-lg p-0.5 shadow-xs">
+            <button
+              onClick={() => switchRole('jobseeker')}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                authRole === 'jobseeker'
+                  ? 'bg-[#1A1A19] text-[#F9BE08] shadow-xs'
+                  : 'text-[#1A1A19]/60 hover:text-[#1A1A19]'
+              }`}
+            >
+              Job Seeker
+            </button>
+            <button
+              onClick={() => switchRole('recruiter')}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                authRole === 'recruiter'
+                  ? 'bg-[#1A1A19] text-[#F9BE08] shadow-xs'
+                  : 'text-[#1A1A19]/60 hover:text-[#1A1A19]'
+              }`}
+            >
+              Recruiter
+            </button>
+          </div>
+
+          {/* Sign Up / Login Button (Photo Inspiration) */}
           <button
-            id="topbar-create-btn"
-            onClick={() => openCreateModal()}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-[0.98] text-[#1A1A19] font-bold text-xs sm:text-sm rounded-lg border border-[#1A1A19]/15 shadow-subtle transition-all"
+            id="topbar-auth-btn"
+            onClick={() => openAuthModal('signup', authRole)}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#F9F8F4] text-[#1A1A19] font-bold text-xs rounded-lg border border-[#DFDFD9] hover:border-[#1A1A19]/40 shadow-xs transition-all"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span className="hidden sm:inline">Showcase Work</span>
-            <span className="sm:hidden">Post</span>
+            <span className="w-2 h-2 rounded-full bg-[#F9BE08]" />
+            <span>Join / Sign In</span>
           </button>
+
+          {/* Create Post / Post Job Button */}
+          {authRole === 'recruiter' ? (
+            <button
+              id="topbar-post-job-btn"
+              onClick={() => openPostJobModal()}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-[0.98] text-[#1A1A19] font-bold text-xs sm:text-sm rounded-lg border border-[#1A1A19]/15 shadow-subtle transition-all"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span className="hidden sm:inline">Post a Role</span>
+              <span className="sm:hidden">Post</span>
+            </button>
+          ) : (
+            <button
+              id="topbar-create-btn"
+              onClick={() => openCreateModal()}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-[0.98] text-[#1A1A19] font-bold text-xs sm:text-sm rounded-lg border border-[#1A1A19]/15 shadow-subtle transition-all"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span className="hidden sm:inline">Showcase Work</span>
+              <span className="sm:hidden">Post</span>
+            </button>
+          )}
 
           {/* Jobs Button */}
           <button

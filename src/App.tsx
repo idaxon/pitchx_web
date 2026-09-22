@@ -11,13 +11,28 @@ import { BookmarksPage } from './pages/BookmarksPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { JobsPage } from './pages/JobsPage';
 import { RetestAssessmentPage } from './pages/RetestAssessmentPage';
+import { AuthPage } from './pages/AuthPage';
 import { ProjectDetailModal } from './components/project/ProjectDetailModal';
 import { CreateProjectModal } from './components/project/CreateProjectModal';
 import { CommentDrawer } from './components/comments/CommentDrawer';
 import { SearchOverlay } from './components/search/SearchOverlay';
+import { AuthModal } from './components/auth/AuthModal';
+import { useScrollAuthTrigger } from './hooks/useScrollAuthTrigger';
 
 const MainRouter: React.FC = () => {
   const { activePage } = useApp();
+
+  // Trigger popup when visitor scrolls down the page
+  useScrollAuthTrigger(280);
+
+  if (activePage === 'login' || activePage === 'signup') {
+    return (
+      <>
+        <AuthPage />
+        <AuthModal />
+      </>
+    );
+  }
 
   const renderCurrentPage = () => {
     switch (activePage) {
@@ -54,6 +69,7 @@ const MainRouter: React.FC = () => {
       <CreateProjectModal />
       <CommentDrawer />
       <SearchOverlay />
+      <AuthModal />
     </AppShell>
   );
 };
@@ -65,3 +81,4 @@ export default function App() {
     </AppProvider>
   );
 }
+

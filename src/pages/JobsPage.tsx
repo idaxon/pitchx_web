@@ -24,9 +24,19 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { mockJobs, JobListing } from '../data/mockJobs';
+import { RecruiterApplicationsView } from '../components/jobs/RecruiterApplicationsView';
+import { PostJobModal } from '../components/jobs/PostJobModal';
 
 export const JobsPage: React.FC = () => {
-  const { currentUser, appliedJobs, applyToJob } = useApp();
+  const {
+    currentUser,
+    appliedJobs,
+    applyToJob,
+    authRole,
+    isPostJobModalOpen,
+    openPostJobModal,
+    closePostJobModal,
+  } = useApp();
   const [jobs] = useState<JobListing[]>(mockJobs);
   const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,6 +98,18 @@ export const JobsPage: React.FC = () => {
     applyToJob(job);
     setApplicationSubmitted(true);
   };
+
+  // ==========================================
+  // VIEW 0: RECRUITER VIEW (when logged in as recruiter)
+  // ==========================================
+  if (authRole === 'recruiter') {
+    return (
+      <>
+        <RecruiterApplicationsView onOpenPostJob={openPostJobModal} />
+        <PostJobModal isOpen={isPostJobModalOpen} onClose={closePostJobModal} />
+      </>
+    );
+  }
 
   // ==========================================
   // VIEW 1: FULL JOB DETAILS PAGE (when job selected)

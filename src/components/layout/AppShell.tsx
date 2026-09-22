@@ -6,10 +6,14 @@ import { MobileNav } from './MobileNav';
 import { useApp } from '../../context/AppContext';
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { activePage } = useApp();
+  const { activePage, authRole } = useApp();
 
-  // Full width pages like Explore or Analytics might adjust right sidebar visibility
-  const isFullWidthPage = activePage === 'analytics' || activePage === 'explore';
+  // Full width pages: Analytics, Explore, Jobs (Candidate Applications dashboard), and Recruiter profile
+  const isFullWidthPage =
+    activePage === 'analytics' ||
+    activePage === 'explore' ||
+    activePage === 'jobs' ||
+    (activePage === 'profile' && authRole === 'recruiter');
 
   return (
     <div className="min-h-screen bg-[#F9F8F4] text-[#1A1A19] flex flex-col antialiased selection:bg-[#F9BE08] selection:text-[#1A1A19]">

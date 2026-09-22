@@ -87,6 +87,7 @@ export interface User {
   skills: SkillItem[];
   certifications: CertificationItem[];
   isFollowing?: boolean;
+  isRecruiter?: boolean;
 }
 
 export interface Comment {
@@ -197,4 +198,52 @@ export interface JobListing {
   applicantsCount: number;
   category: string;
   perks: string[];
+  domainKey?: string;
+  domainName?: string;
+  isRecruiterPosted?: boolean;
 }
+
+export interface RecruiterScore {
+  overall: number; // e.g. 96/100
+  companyReputation: number; // e.g. 98/100
+  jobPostsQuality: number; // e.g. 94/100
+  customerRating: number; // e.g. 96/100 (4.9 ★)
+  totalHires: number;
+  activeJobsCount: number;
+  responseRatePercent: number; // e.g. 98%
+  avgResponseTimeHours: number; // e.g. 4.5
+}
+
+export type ApplicationStatus =
+  | 'under_review'
+  | 'shortlisted'
+  | 'interview_scheduled'
+  | 'offer_sent'
+  | 'rejected';
+
+export interface JobApplication {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  company: string;
+  applicant: {
+    id: string;
+    name: string;
+    handle: string;
+    avatar: string;
+    headline: string;
+    score: number;
+    domainScore?: number;
+    proofProjectTitle?: string;
+    proofProjectCategory?: string;
+    proofProjectId?: string;
+    skills: string[];
+    githubUrl?: string;
+    portfolioUrl?: string;
+  };
+  appliedAt: string;
+  status: ApplicationStatus;
+  matchScore: number;
+  notes?: string;
+}
+

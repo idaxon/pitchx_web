@@ -20,11 +20,13 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ProjectPostCard } from '../components/feed/ProjectPostCard';
+import { RecruiterProfileView } from '../components/profile/RecruiterProfileView';
 
 export const ProfilePage: React.FC = () => {
   const {
     selectedUserProfile,
     currentUser,
+    authRole,
     projects,
     handleToggleFollow,
     openCreateModal,
@@ -37,6 +39,11 @@ export const ProfilePage: React.FC = () => {
   // Default to currentUser if no specific profile selected
   const user = selectedUserProfile || currentUser;
   const isSelf = user.id === currentUser.id;
+
+  // If user is a recruiter or current session is in recruiter role viewing own profile
+  if (user.isRecruiter || user.id.includes('recruiter') || (isSelf && authRole === 'recruiter')) {
+    return <RecruiterProfileView user={user} isSelf={isSelf} />;
+  }
 
   const userProjects = projects.filter((p) => p.author.id === user.id);
 
