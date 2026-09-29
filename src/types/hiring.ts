@@ -10,6 +10,7 @@ export interface EnterpriseUser {
   department: string;
   designation: string;
   phone?: string;
+  password?: string;
 }
 
 export type StageType =

@@ -14,6 +14,8 @@ import {
   UserPlus,
   Mail,
   Briefcase,
+  Key,
+  Copy,
 } from 'lucide-react';
 import { useHiring } from '../../context/HiringContext';
 import { StageType, EnterpriseRole } from '../../types/hiring';
@@ -69,6 +71,9 @@ export const HiringPipelineBuilder: React.FC<HiringPipelineBuilderProps> = ({ jo
   const [memberRole, setMemberRole]               = useState<EnterpriseRole>('INTERVIEWER');
   const [memberDesignation, setMemberDesignation] = useState('');
   const [memberDept, setMemberDept]               = useState('Engineering');
+  const [memberPassword, setMemberPassword]       = useState('PitchX@' + Math.floor(1000 + Math.random() * 9000));
+  const [createdCreds, setCreatedCreds]           = useState<{ name: string; email: string; role: string; pass: string } | null>(null);
+  const [copiedCreds, setCopiedCreds]             = useState(false);
 
   // ── Template picker ──
   const [showTemplates, setShowTemplates] = useState(false);
@@ -131,6 +136,7 @@ export const HiringPipelineBuilder: React.FC<HiringPipelineBuilderProps> = ({ jo
 
     const initials = encodeURIComponent(memberName.trim());
     const autoAvatar = `https://ui-avatars.com/api/?name=${initials}&background=1A1A19&color=F9BE08&bold=true`;
+    const finalPassword = memberPassword.trim() || ('PitchX@' + Math.floor(1000 + Math.random() * 9000));
 
     addTeamMember({
       id: `user-${Date.now()}`,
@@ -140,6 +146,15 @@ export const HiringPipelineBuilder: React.FC<HiringPipelineBuilderProps> = ({ jo
       role: memberRole,
       department: memberDept.trim() || 'General',
       designation: memberDesignation.trim() || (memberRole === 'HR' ? 'HR Specialist' : memberRole === 'MANAGER' ? 'Hiring Manager' : 'Technical Interviewer'),
+      password: finalPassword,
+    });
+
+    // Show credential toast/card
+    setCreatedCreds({
+      name: memberName.trim(),
+      email: memberEmail.trim(),
+      role: memberRole,
+      pass: finalPassword,
     });
 
     setMemberName('');
@@ -147,7 +162,16 @@ export const HiringPipelineBuilder: React.FC<HiringPipelineBuilderProps> = ({ jo
     setMemberDesignation('');
     setMemberDept('Engineering');
     setMemberRole('INTERVIEWER');
+    setMemberPassword('PitchX@' + Math.floor(1000 + Math.random() * 9000));
     setShowAddMemberForm(false);
+  };
+
+  const copyCredentials = () => {
+    if (!createdCreds) return;
+    const text = `PitchX Login Credentials:\nEmail: ${createdCreds.email}\nPassword: ${createdCreds.pass}\nRole: ${createdCreds.role}`;
+    navigator.clipboard.writeText(text);
+    setCopiedCreds(true);
+    setTimeout(() => setCopiedCreds(false), 2500);
   };
 
   const handleRemoveMember = (userId: string) => {
@@ -548,6 +572,30 @@ export const HiringPipelineBuilder: React.FC<HiringPipelineBuilderProps> = ({ jo
                     className="w-full px-3 py-2 bg-white border border-[#DFDFD9] focus:border-[#1A1A19] rounded-xl text-sm text-[#1A1A19] outline-none transition-all"
                   />
                 </div>
+
+                {/* Login Password / Access Pass */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-mono font-bold text-[#1A1A19]/60 uppercase flex items-center gap-1">
+                      <Key className="w-3 h-3 text-[#F9BE08]" /> Access Password
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setMemberPassword('PitchX@' + Math.floor(1000 + Math.random() * 9000))}
+                      className="text-[10px] font-mono text-[#1A1A19]/60 hover:text-[#1A1A19] underline"
+                    >
+                      🎲 Generate
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={memberPassword}
+                    onChange={(e) => setMemberPassword(e.target.value)}
+                    placeholder="e.g. PitchX@4829"
+                    className="w-full px-3 py-2 bg-white border border-[#DFDFD9] focus:border-[#1A1A19] rounded-xl text-sm text-[#1A1A19] font-mono outline-none transition-all"
+                  />
+                </div>
               </div>
 
               {/* Action Buttons */}
@@ -558,7 +606,7 @@ export const HiringPipelineBuilder: React.FC<HiringPipelineBuilderProps> = ({ jo
                   className="px-5 py-2 bg-[#F9BE08] hover:bg-[#EFD30B] disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-[#1A1A19] text-xs font-black rounded-xl border border-[#1A1A19]/15 shadow-subtle flex items-center gap-1.5 transition-all"
                 >
                   <UserPlus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  Add to Hiring Team
+                  Create Member & Credentials
                 </button>
                 <button
                   type="button"
@@ -569,6 +617,57 @@ export const HiringPipelineBuilder: React.FC<HiringPipelineBuilderProps> = ({ jo
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* ── Generated Credentials Notice Banner ── */}
+        {createdCreds && (
+          <div className="m-4 p-4 bg-gradient-to-r from-[#FFFBEA] to-[#FAF8F1] border-2 border-[#F9BE08] rounded-2xl shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-wider text-[#1A1A19]">
+                  Team Member Account Created!
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1A1A19] text-[#F9BE08] font-bold">
+                  {createdCreds.role}
+                </span>
+              </div>
+              <p className="text-xs text-[#1A1A19]/80 font-medium">
+                <strong>{createdCreds.name}</strong> can now log in using:
+              </p>
+              <div className="flex flex-wrap items-center gap-3 text-xs font-mono bg-white/80 px-3 py-1.5 rounded-xl border border-[#DFDFD9]">
+                <span><strong>Email:</strong> {createdCreds.email}</span>
+                <span className="text-[#1A1A19]/30">|</span>
+                <span><strong>Password:</strong> <span className="font-bold text-[#1A1A19]">{createdCreds.pass}</span></span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={copyCredentials}
+                className="px-4 py-2 bg-[#1A1A19] hover:bg-[#2A2A28] text-[#F9BE08] text-xs font-black rounded-xl shadow-subtle flex items-center gap-1.5 transition-all"
+              >
+                {copiedCreds ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy Login Info</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setCreatedCreds(null)}
+                className="p-2 text-[#1A1A19]/40 hover:text-[#1A1A19] rounded-xl hover:bg-white/80"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 

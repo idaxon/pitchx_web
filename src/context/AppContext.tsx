@@ -39,7 +39,7 @@ export type PageType =
   | 'login'
   | 'signup';
 export type FeedTabType = 'for-you' | 'following' | 'trending' | 'latest';
-export type AuthRoleType = 'jobseeker' | 'recruiter';
+export type AuthRoleType = 'jobseeker' | 'recruiter' | 'hr' | 'manager' | 'interviewer' | 'admin';
 
 interface AppContextType {
   activePage: PageType;
@@ -74,7 +74,14 @@ interface AppContextType {
   openAuthModal: (mode?: 'signin' | 'signup', role?: AuthRoleType) => void;
   closeAuthModal: () => void;
   dismissScrollAuth: () => void;
-  login: (details: { email: string; role?: AuthRoleType; name?: string }) => void;
+  login: (details: {
+    email: string;
+    password?: string;
+    role?: AuthRoleType;
+    name?: string;
+    avatar?: string;
+    designation?: string;
+  }) => void;
   logout: () => void;
   switchRole: (role: AuthRoleType) => void;
   // Recruiter state & actions
@@ -170,13 +177,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  // Preset personas for authentic role-based workflows
+  const personaUsers: Record<AuthRoleType, User> = {
+    jobseeker: {
+      ...currentUser,
+      id: 'usr-amelie',
+      name: 'Amélie Laurent',
+      handle: 'amelielaurent',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+      headline: 'Senior Full Stack Engineer & UI Architect',
+      bio: 'Building verified scalable frontend systems & AI design engines. Top 1% builder on PitchX.',
+      isRecruiter: false,
+    },
+    hr: {
+      ...currentRecruiterUser,
+      id: 'usr-ananya-hr',
+      name: 'Ananya Sharma',
+      handle: 'ananyatalent',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80',
+      headline: 'Lead Talent Partner & Head of HR @ Stripe / PitchX',
+      bio: 'Overseeing end-to-end recruitment pipelines, interview scheduling, and enterprise talent acquisition.',
+      isRecruiter: true,
+    },
+    manager: {
+      ...currentRecruiterUser,
+      id: 'usr-rahul-manager',
+      name: 'Rahul Mehta',
+      handle: 'rahulmehta',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+      headline: 'Engineering Manager (Frontend & Design Systems)',
+      bio: 'Reviewing candidates, screening code quality, approving hires, and scaling engineering teams.',
+      isRecruiter: true,
+    },
+    interviewer: {
+      ...currentRecruiterUser,
+      id: 'usr-amit-interviewer',
+      name: 'Amit Verma',
+      handle: 'amitverma',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80',
+      headline: 'Principal Staff Engineer & Technical Hiring Panel',
+      bio: 'Conducting live technical rounds, system design evaluations, and scoring candidate assessments.',
+      isRecruiter: true,
+    },
+    recruiter: {
+      ...currentRecruiterUser,
+      id: 'usr-admin',
+      name: 'Sarah Jenkins',
+      handle: 'sarahjenkins',
+      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80',
+      headline: 'VP of Global Talent Acquisition & Recruiter Admin',
+      bio: 'Managing enterprise ATS pipelines, job listings, and strategic hiring decisions.',
+      isRecruiter: true,
+    },
+    admin: {
+      ...currentRecruiterUser,
+      id: 'usr-admin',
+      name: 'Sarah Jenkins',
+      handle: 'sarahjenkins',
+      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80',
+      headline: 'VP of Global Talent Acquisition & Recruiter Admin',
+      bio: 'Full platform administration, permissions, pipeline customization, and organization management.',
+      isRecruiter: true,
+    },
+  };
+
   const switchRole = (newRole: AuthRoleType) => {
     setAuthRole(newRole);
-    if (newRole === 'recruiter') {
-      setCurrUser(currentRecruiterUser);
-    } else {
-      setCurrUser(currentUser);
-    }
+    const persona = personaUsers[newRole] || currentUser;
+    setCurrUser(persona);
   };
 
   const openAuthModal = (mode?: 'signin' | 'signup', role?: AuthRoleType) => {
@@ -198,22 +266,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const login = ({ email, role = 'jobseeker', name }: { email: string; role?: AuthRoleType; name?: string }) => {
+  const login = ({
+    email,
+    role = 'jobseeker',
+    name,
+    avatar,
+    designation,
+  }: {
+    email: string;
+    role?: AuthRoleType;
+    name?: string;
+    avatar?: string;
+    designation?: string;
+  }) => {
     setIsAuthenticated(true);
     setAuthRole(role);
-    if (role === 'recruiter') {
-      setCurrUser({
-        ...currentRecruiterUser,
-        name: name || currentRecruiterUser.name,
-      });
-    } else {
-      const updatedUser: User = {
-        ...currentUser,
-        name: name || currentUser.name,
-        handle: (name ? name.toLowerCase().replace(/\s+/g, '') : currentUser.handle),
-      };
-      setCurrUser(updatedUser);
-    }
+    const basePersona = personaUsers[role] || currentUser;
+    
+    setCurrUser({
+      ...basePersona,
+      name: name || basePersona.name,
+      avatar: avatar || basePersona.avatar,
+      headline: designation || basePersona.headline,
+      handle: name ? name.toLowerCase().replace(/\s+/g, '') : basePersona.handle,
+    });
     setIsAuthModalOpen(false);
   };
 

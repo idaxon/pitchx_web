@@ -19,6 +19,7 @@ export const mockEnterpriseUsers: EnterpriseUser[] = [
     department: 'People & Talent Acquisition',
     designation: 'Lead Talent Partner & Recruiter',
     phone: '+91 98765 43210',
+    password: 'password123',
   },
   {
     id: 'usr-rahul-manager',
@@ -30,6 +31,7 @@ export const mockEnterpriseUsers: EnterpriseUser[] = [
     department: 'Frontend & Systems Engineering',
     designation: 'Engineering Manager (Design Systems & Web)',
     phone: '+91 98765 12345',
+    password: 'password123',
   },
   {
     id: 'usr-amit-interviewer',
@@ -41,6 +43,7 @@ export const mockEnterpriseUsers: EnterpriseUser[] = [
     department: 'Core Architecture',
     designation: 'Principal Staff Engineer & Technical Panel',
     phone: '+91 98111 22334',
+    password: 'password123',
   },
   {
     id: 'usr-priya-candidate',
@@ -52,6 +55,7 @@ export const mockEnterpriseUsers: EnterpriseUser[] = [
     department: 'Design Engineering',
     designation: 'Staff Design Engineer',
     phone: '+91 99887 76655',
+    password: 'password123',
   },
   {
     id: 'usr-admin',
@@ -62,6 +66,7 @@ export const mockEnterpriseUsers: EnterpriseUser[] = [
     role: 'ADMIN',
     department: 'Executive Leadership',
     designation: 'VP of Talent & Admin',
+    password: 'password123',
   },
 ];
 

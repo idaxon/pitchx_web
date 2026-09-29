@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 
-export const useScrollAuthTrigger = (threshold: number = 300) => {
+export const useScrollAuthTrigger = (threshold: number = 120) => {
   const {
+    isAuthenticated,
     isAuthModalOpen,
     hasDismissedAuthScroll,
     openAuthModal,
@@ -12,13 +13,20 @@ export const useScrollAuthTrigger = (threshold: number = 300) => {
   const hasTriggeredRef = useRef(false);
 
   useEffect(() => {
-    // If modal is already open, user already dismissed in this session, or on dedicated auth page, do nothing
-    if (hasDismissedAuthScroll || hasTriggeredRef.current || activePage === 'login' || activePage === 'signup') {
+    // Only trigger for unauthenticated guests, not on auth pages or if already dismissed/open
+    if (
+      isAuthenticated ||
+      hasDismissedAuthScroll ||
+      hasTriggeredRef.current ||
+      isAuthModalOpen ||
+      activePage === 'login' ||
+      activePage === 'signup'
+    ) {
       return;
     }
 
     const handleScroll = () => {
-      if (hasTriggeredRef.current || hasDismissedAuthScroll) return;
+      if (hasTriggeredRef.current || hasDismissedAuthScroll || isAuthenticated) return;
 
       const currentScrollY = window.scrollY || document.documentElement.scrollTop;
       if (currentScrollY > threshold) {
@@ -31,5 +39,6 @@ export const useScrollAuthTrigger = (threshold: number = 300) => {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [hasDismissedAuthScroll, isAuthModalOpen, openAuthModal, activePage, threshold]);
+  }, [isAuthenticated, hasDismissedAuthScroll, isAuthModalOpen, openAuthModal, activePage, threshold]);
 };
+

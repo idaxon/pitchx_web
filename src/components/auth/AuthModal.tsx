@@ -141,89 +141,178 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
 
             {/* Header Text */}
-            <div className="mt-6 sm:mt-8">
+            <div className="mt-4 sm:mt-6">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1A1A19] tracking-tight">
-                {mode === 'signup' ? 'Create an account' : 'Welcome back'}
+                {mode === 'signup' ? 'Create an Account' : 'Welcome to PitchX'}
               </h2>
               <p className="text-xs sm:text-sm text-[#1A1A19]/65 mt-1 font-medium">
                 {mode === 'signup'
-                  ? 'Sign up and get instant access to verified proof-of-work'
-                  : 'Sign in to access your proof portfolio and jobs'}
+                  ? 'Join PitchX as a Candidate, HR Specialist, Hiring Manager, or Technical Reviewer.'
+                  : 'Sign in to access your proof portfolio, ATS pipeline, and interviews.'}
               </p>
             </div>
 
-            {/* Role Switcher (Job Seeker vs Recruiter) on Sign-Up */}
+            {/* ── Quick 1-Click Persona Logins ── */}
+            {mode === 'signin' && (
+              <div className="mt-4 p-3 bg-white/80 border border-[#DFDFD9] rounded-2xl space-y-2 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-black uppercase tracking-wider text-[#1A1A19]/60 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#F9BE08]" /> Quick 1-Click Demo Logins
+                  </span>
+                  <span className="text-[10px] text-[#1A1A19]/40 font-mono">Instant Access</span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      login({
+                        email: 'ananya.sharma@pitchx.talent',
+                        role: 'hr',
+                        name: 'Ananya Sharma',
+                        designation: 'Lead Talent Partner & Head of HR',
+                      });
+                      handleClose();
+                    }}
+                    className="p-2 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/80 text-left transition-all group"
+                  >
+                    <div className="text-[11px] font-black text-blue-900 flex items-center gap-1">
+                      <span>🔍</span> HR Lead
+                    </div>
+                    <div className="text-[9px] text-blue-700/70 font-mono truncate">Ananya Sharma</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      login({
+                        email: 'rahul.mehta@stripe.eng',
+                        role: 'manager',
+                        name: 'Rahul Mehta',
+                        designation: 'Engineering Manager (Design Systems)',
+                      });
+                      handleClose();
+                    }}
+                    className="p-2 rounded-xl border border-amber-300 bg-amber-50/70 hover:bg-amber-100/80 text-left transition-all group"
+                  >
+                    <div className="text-[11px] font-black text-amber-950 flex items-center gap-1">
+                      <span>💼</span> Manager
+                    </div>
+                    <div className="text-[9px] text-amber-800/70 font-mono truncate">Rahul Mehta</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      login({
+                        email: 'amit.verma@stripe.eng',
+                        role: 'interviewer',
+                        name: 'Amit Verma',
+                        designation: 'Principal Staff Engineer & Technical Panel',
+                      });
+                      handleClose();
+                    }}
+                    className="p-2 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100/80 text-left transition-all group"
+                  >
+                    <div className="text-[11px] font-black text-purple-900 flex items-center gap-1">
+                      <span>⚡</span> Interviewer
+                    </div>
+                    <div className="text-[9px] text-purple-700/70 font-mono truncate">Amit Verma</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      login({
+                        email: 'amelielaurent7622@gmail.com',
+                        role: 'jobseeker',
+                        name: 'Amélie Laurent',
+                        designation: 'Senior Full Stack Engineer & UI Architect',
+                      });
+                      handleClose();
+                    }}
+                    className="p-2 rounded-xl border border-[#F9BE08]/60 bg-[#F9BE08]/20 hover:bg-[#F9BE08]/30 text-left transition-all group"
+                  >
+                    <div className="text-[11px] font-black text-yellow-950 flex items-center gap-1">
+                      <span>🎯</span> Candidate
+                    </div>
+                    <div className="text-[9px] text-yellow-900/70 font-mono truncate">Amélie Laurent</div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Role Switcher on Sign-Up */}
             {mode === 'signup' && (
-              <div className="mt-5 space-y-2">
+              <div className="mt-4 space-y-2">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-[#1A1A19]/70 block">
-                  I want to join as:
+                  I am joining as:
                 </label>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {/* Option 1: Job Seeker */}
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Candidate */}
                   <button
                     type="button"
                     onClick={() => setRole('jobseeker')}
-                    className={`relative p-3 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between gap-1.5 ${
+                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
                       role === 'jobseeker'
-                        ? 'bg-white border-[#F9BE08] shadow-md ring-2 ring-[#F9BE08]/40'
-                        : 'bg-white/50 hover:bg-white/80 border-[#DFDFD9] text-[#1A1A19]/70'
+                        ? 'bg-white border-[#F9BE08] shadow-sm ring-2 ring-[#F9BE08]/40'
+                        : 'bg-white/60 hover:bg-white border-[#DFDFD9] text-[#1A1A19]/70'
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                          role === 'jobseeker'
-                            ? 'bg-[#F9BE08] text-[#1A1A19]'
-                            : 'bg-[#1A1A19]/5 text-[#1A1A19]/60'
-                        }`}
-                      >
-                        <Sparkles className="w-4 h-4 stroke-[2.5]" />
-                      </div>
-                      {role === 'jobseeker' && (
-                        <CheckCircle2 className="w-4 h-4 text-[#F9BE08] fill-[#1A1A19]" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="text-xs font-extrabold text-[#1A1A19]">
-                        Job Seeker
-                      </div>
-                      <div className="text-[10px] text-[#1A1A19]/60 font-medium leading-tight mt-0.5">
-                        Showcase Proof & Get Hired
-                      </div>
+                    <span className="text-base">🎯</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-extrabold text-[#1A1A19]">Job Seeker</div>
+                      <div className="text-[9px] text-[#1A1A19]/60 font-medium truncate">Proof & Jobs</div>
                     </div>
                   </button>
 
-                  {/* Option 2: Recruiter */}
+                  {/* HR Lead */}
                   <button
                     type="button"
-                    onClick={() => setRole('recruiter')}
-                    className={`relative p-3 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between gap-1.5 ${
-                      role === 'recruiter'
-                        ? 'bg-white border-[#F9BE08] shadow-md ring-2 ring-[#F9BE08]/40'
-                        : 'bg-white/50 hover:bg-white/80 border-[#DFDFD9] text-[#1A1A19]/70'
+                    onClick={() => setRole('hr')}
+                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
+                      role === 'hr'
+                        ? 'bg-white border-blue-400 shadow-sm ring-2 ring-blue-300'
+                        : 'bg-white/60 hover:bg-white border-[#DFDFD9] text-[#1A1A19]/70'
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                          role === 'recruiter'
-                            ? 'bg-[#F9BE08] text-[#1A1A19]'
-                            : 'bg-[#1A1A19]/5 text-[#1A1A19]/60'
-                        }`}
-                      >
-                        <Briefcase className="w-4 h-4 stroke-[2.5]" />
-                      </div>
-                      {role === 'recruiter' && (
-                        <CheckCircle2 className="w-4 h-4 text-[#F9BE08] fill-[#1A1A19]" />
-                      )}
+                    <span className="text-base">🔍</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-extrabold text-[#1A1A19]">HR Specialist</div>
+                      <div className="text-[9px] text-[#1A1A19]/60 font-medium truncate">ATS & Offers</div>
                     </div>
-                    <div>
-                      <div className="text-xs font-extrabold text-[#1A1A19]">
-                        Recruiter
-                      </div>
-                      <div className="text-[10px] text-[#1A1A19]/60 font-medium leading-tight mt-0.5">
-                        Scout Talent & Post Roles
-                      </div>
+                  </button>
+
+                  {/* Manager */}
+                  <button
+                    type="button"
+                    onClick={() => setRole('manager')}
+                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
+                      role === 'manager'
+                        ? 'bg-white border-amber-400 shadow-sm ring-2 ring-amber-300'
+                        : 'bg-white/60 hover:bg-white border-[#DFDFD9] text-[#1A1A19]/70'
+                    }`}
+                  >
+                    <span className="text-base">💼</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-extrabold text-[#1A1A19]">Hiring Manager</div>
+                      <div className="text-[9px] text-[#1A1A19]/60 font-medium truncate">Review & Approvals</div>
+                    </div>
+                  </button>
+
+                  {/* Interviewer */}
+                  <button
+                    type="button"
+                    onClick={() => setRole('interviewer')}
+                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
+                      role === 'interviewer'
+                        ? 'bg-white border-purple-400 shadow-sm ring-2 ring-purple-300'
+                        : 'bg-white/60 hover:bg-white border-[#DFDFD9] text-[#1A1A19]/70'
+                    }`}
+                  >
+                    <span className="text-base">⚡</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-extrabold text-[#1A1A19]">Tech Interviewer</div>
+                      <div className="text-[9px] text-[#1A1A19]/60 font-medium truncate">Evaluations & Scores</div>
                     </div>
                   </button>
                 </div>
@@ -231,7 +320,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
 
             {/* Main Form */}
-            <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">
+            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
               {statusMessage && (
                 <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 text-xs font-semibold">
                   {statusMessage}
@@ -249,7 +338,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder={role === 'recruiter' ? 'Sarah Jenkins' : 'Amélie Laurent'}
+                    placeholder={
+                      role === 'hr' ? 'Elena Rostova' :
+                      role === 'manager' ? 'Marcus Vance' :
+                      role === 'interviewer' ? 'Aria Chen' :
+                      'Amélie Laurent'
+                    }
                     className="w-full px-4 py-2.5 bg-white/90 hover:bg-white focus:bg-white border border-[#DFDFD9] focus:border-[#1A1A19] rounded-xl text-xs sm:text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/35 focus:outline-none focus:ring-2 focus:ring-[#F9BE08]/30 transition-all shadow-xs"
                   />
                 </div>
@@ -258,7 +352,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {/* Email */}
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-[#1A1A19]/70 mb-1 block">
-                  Email
+                  Email Address
                 </label>
                 <input
                   type="email"
@@ -266,28 +360,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={
-                    role === 'recruiter'
-                      ? 'sarah.jenkins@company.com'
+                    mode === 'signin'
+                      ? 'e.g. ananya.sharma@pitchx.talent or rahul.mehta@stripe.eng'
+                      : role === 'hr'
+                      ? 'elena.hr@company.com'
+                      : role === 'manager'
+                      ? 'marcus.eng@company.com'
                       : 'amelielaurent7622@gmail.com'
                   }
                   className="w-full px-4 py-2.5 bg-white/90 hover:bg-white focus:bg-white border border-[#DFDFD9] focus:border-[#1A1A19] rounded-xl text-xs sm:text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/35 focus:outline-none focus:ring-2 focus:ring-[#F9BE08]/30 transition-all shadow-xs"
                 />
               </div>
 
-              {/* Role specific dynamic field */}
+              {/* Role specific dynamic field for Signup */}
               {mode === 'signup' && (
                 <div>
                   <label className="text-[11px] font-bold uppercase tracking-wider text-[#1A1A19]/70 mb-1 block">
-                    {role === 'recruiter' ? 'Company / Organization' : 'Primary Skill / Domain'}
+                    {role === 'jobseeker' ? 'Primary Skill / Domain' : 'Department & Title'}
                   </label>
                   <input
                     type="text"
                     value={extraField}
                     onChange={(e) => setExtraField(e.target.value)}
                     placeholder={
-                      role === 'recruiter'
-                        ? 'e.g. Stripe, Airbnb, Scale AI'
-                        : 'e.g. Full Stack (React + Node), AI/ML, UI/UX'
+                      role === 'jobseeker'
+                        ? 'e.g. Full Stack React + TypeScript, AI/ML'
+                        : 'e.g. Core Engineering, Talent Acquisition'
                     }
                     className="w-full px-4 py-2.5 bg-white/90 hover:bg-white focus:bg-white border border-[#DFDFD9] focus:border-[#1A1A19] rounded-xl text-xs sm:text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/35 focus:outline-none focus:ring-2 focus:ring-[#F9BE08]/30 transition-all shadow-xs"
                   />
@@ -296,9 +394,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               {/* Password */}
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-[#1A1A19]/70 mb-1 block">
-                  Password
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#1A1A19]/70 block">
+                    Password
+                  </label>
+                  {mode === 'signin' && (
+                    <span className="text-[10px] text-[#1A1A19]/50 font-mono">
+                      (Demo: <code className="text-[#1A1A19] font-bold">password123</code>)
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -323,13 +428,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               </div>
 
-              {/* Submit Pill Button (Golden yellow inspired by photo) */}
+              {/* Submit Pill Button */}
               <button
                 type="submit"
                 id="auth-submit-btn"
                 className="w-full mt-2 py-3 px-6 bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-[0.99] text-[#1A1A19] font-black text-sm rounded-xl border border-[#1A1A19]/15 shadow-md flex items-center justify-center gap-2 transition-all group"
               >
-                <span>{mode === 'signup' ? 'Submit' : 'Sign In to PitchX'}</span>
+                <span>{mode === 'signup' ? 'Create Account & Continue' : 'Sign In to Account'}</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5] group-hover:translate-x-1 transition-transform" />
               </button>
 
@@ -376,11 +481,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
 
           {/* Footer Bar */}
-          <div className="mt-6 pt-4 border-t border-[#DFDFD9]/70 flex flex-wrap items-center justify-between text-xs text-[#1A1A19]/65 gap-2">
+          <div className="mt-4 pt-3 border-t border-[#DFDFD9]/70 flex flex-wrap items-center justify-between text-xs text-[#1A1A19]/65 gap-2">
             <div>
               {mode === 'signup' ? (
                 <span>
-                  Have any account?{' '}
+                  Already have an account?{' '}
                   <button
                     type="button"
                     onClick={() => {
@@ -403,7 +508,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     }}
                     className="font-bold text-[#1A1A19] underline decoration-[#F9BE08] decoration-2 underline-offset-2 hover:text-black transition-colors"
                   >
-                    Sign up
+                    Create Account
                   </button>
                 </span>
               )}
@@ -411,7 +516,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <div className="flex items-center gap-3 text-[11px] text-[#1A1A19]/50">
               <a href="#terms" className="hover:underline hover:text-[#1A1A19]">
-                Terms & Conditions
+                Terms
               </a>
               <span>•</span>
               <a href="#privacy" className="hover:underline hover:text-[#1A1A19]">
