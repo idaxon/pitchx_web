@@ -152,94 +152,118 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </p>
             </div>
 
-            {/* ── Quick 1-Click Persona Logins ── */}
-            {mode === 'signin' && (
-              <div className="mt-4 p-3 bg-white/80 border border-[#DFDFD9] rounded-2xl space-y-2 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-black uppercase tracking-wider text-[#1A1A19]/60 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-[#F9BE08]" /> Quick 1-Click Demo Logins
-                  </span>
-                  <span className="text-[10px] text-[#1A1A19]/40 font-mono">Instant Access</span>
-                </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      login({
-                        email: 'ananya.sharma@pitchx.talent',
-                        role: 'hr',
-                        name: 'Ananya Sharma',
-                        designation: 'Lead Talent Partner & Head of HR',
-                      });
-                      handleClose();
-                    }}
-                    className="p-2 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/80 text-left transition-all group"
-                  >
-                    <div className="text-[11px] font-black text-blue-900 flex items-center gap-1">
-                      <span>🔍</span> HR Lead
-                    </div>
-                    <div className="text-[9px] text-blue-700/70 font-mono truncate">Ananya Sharma</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      login({
-                        email: 'rahul.mehta@stripe.eng',
-                        role: 'manager',
-                        name: 'Rahul Mehta',
-                        designation: 'Engineering Manager (Design Systems)',
-                      });
-                      handleClose();
-                    }}
-                    className="p-2 rounded-xl border border-amber-300 bg-amber-50/70 hover:bg-amber-100/80 text-left transition-all group"
-                  >
-                    <div className="text-[11px] font-black text-amber-950 flex items-center gap-1">
-                      <span>💼</span> Manager
-                    </div>
-                    <div className="text-[9px] text-amber-800/70 font-mono truncate">Rahul Mehta</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      login({
-                        email: 'amit.verma@stripe.eng',
-                        role: 'interviewer',
-                        name: 'Amit Verma',
-                        designation: 'Principal Staff Engineer & Technical Panel',
-                      });
-                      handleClose();
-                    }}
-                    className="p-2 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100/80 text-left transition-all group"
-                  >
-                    <div className="text-[11px] font-black text-purple-900 flex items-center gap-1">
-                      <span>⚡</span> Interviewer
-                    </div>
-                    <div className="text-[9px] text-purple-700/70 font-mono truncate">Amit Verma</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      login({
-                        email: 'amelielaurent7622@gmail.com',
-                        role: 'jobseeker',
-                        name: 'Amélie Laurent',
-                        designation: 'Senior Full Stack Engineer & UI Architect',
-                      });
-                      handleClose();
-                    }}
-                    className="p-2 rounded-xl border border-[#F9BE08]/60 bg-[#F9BE08]/20 hover:bg-[#F9BE08]/30 text-left transition-all group"
-                  >
-                    <div className="text-[11px] font-black text-yellow-950 flex items-center gap-1">
-                      <span>🎯</span> Candidate
-                    </div>
-                    <div className="text-[9px] text-yellow-900/70 font-mono truncate">Amélie Laurent</div>
-                  </button>
-                </div>
+            {/* ── Quick 1-Click Test Role Logins ── */}
+            <div className="mt-4 p-3 bg-white/90 border border-[#DFDFD9] rounded-2xl space-y-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-black uppercase tracking-wider text-[#1A1A19]/80 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#F9BE08]" /> Quick 1-Click Test Personas
+                </span>
+                <span className="text-[10px] text-emerald-700 font-mono font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                  Ready to Test
+                </span>
               </div>
-            )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                {/* 1. Job Seeker */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    login({
+                      email: 'candidate@pitchx.dev',
+                      role: 'jobseeker',
+                      name: 'Amélie Laurent',
+                      designation: 'Senior Full Stack Engineer & UI Architect',
+                    });
+                    handleClose();
+                  }}
+                  className="p-2 rounded-xl border border-[#F9BE08]/60 bg-[#F9BE08]/15 hover:bg-[#F9BE08]/30 text-left transition-all group"
+                >
+                  <div className="text-[11px] font-black text-yellow-950 flex items-center gap-1">
+                    <span>🎯</span> Candidate
+                  </div>
+                  <div className="text-[9px] text-yellow-900/80 font-mono truncate">candidate@pitchx.dev</div>
+                </button>
+
+                {/* 2. HR Lead */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    login({
+                      email: 'hr@pitchx.dev',
+                      role: 'hr',
+                      name: 'Ananya Sharma',
+                      designation: 'Lead Talent Partner & Head of HR',
+                    });
+                    handleClose();
+                  }}
+                  className="p-2 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-left transition-all group"
+                >
+                  <div className="text-[11px] font-black text-blue-900 flex items-center gap-1">
+                    <span>🔍</span> HR Lead
+                  </div>
+                  <div className="text-[9px] text-blue-700/80 font-mono truncate">hr@pitchx.dev</div>
+                </button>
+
+                {/* 3. Manager */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    login({
+                      email: 'manager@pitchx.dev',
+                      role: 'manager',
+                      name: 'Rahul Mehta',
+                      designation: 'Engineering Manager (Design Systems)',
+                    });
+                    handleClose();
+                  }}
+                  className="p-2 rounded-xl border border-amber-300 bg-amber-50/80 hover:bg-amber-100 text-left transition-all group"
+                >
+                  <div className="text-[11px] font-black text-amber-950 flex items-center gap-1">
+                    <span>💼</span> Manager
+                  </div>
+                  <div className="text-[9px] text-amber-800/80 font-mono truncate">manager@pitchx.dev</div>
+                </button>
+
+                {/* 4. Interviewer */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    login({
+                      email: 'interviewer@pitchx.dev',
+                      role: 'interviewer',
+                      name: 'Amit Verma',
+                      designation: 'Principal Staff Engineer & Tech Panel',
+                    });
+                    handleClose();
+                  }}
+                  className="p-2 rounded-xl border border-purple-200 bg-purple-50/80 hover:bg-purple-100 text-left transition-all group"
+                >
+                  <div className="text-[11px] font-black text-purple-900 flex items-center gap-1">
+                    <span>⚡</span> Interviewer
+                  </div>
+                  <div className="text-[9px] text-purple-700/80 font-mono truncate">interviewer@pitchx.dev</div>
+                </button>
+
+                {/* 5. Admin */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    login({
+                      email: 'admin@pitchx.dev',
+                      role: 'admin',
+                      name: 'Sarah Jenkins',
+                      designation: 'VP of Global Talent Acquisition & Admin',
+                    });
+                    handleClose();
+                  }}
+                  className="p-2 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-left transition-all group col-span-2 sm:col-span-1"
+                >
+                  <div className="text-[11px] font-black text-rose-900 flex items-center gap-1">
+                    <span>🏆</span> Admin
+                  </div>
+                  <div className="text-[9px] text-rose-700/80 font-mono truncate">admin@pitchx.dev</div>
+                </button>
+              </div>
+            </div>
 
             {/* Role Switcher on Sign-Up */}
             {mode === 'signup' && (

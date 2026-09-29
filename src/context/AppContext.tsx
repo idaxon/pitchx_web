@@ -126,10 +126,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notifications, setNotifications] = useState<NotificationItem[]>(mockNotifications);
   const [comments, setComments] = useState<Record<string, Comment[]>>(initialComments);
 
-  // Auth state
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  // Auth state - starts unauthenticated so users choose their role or test persona
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signup');
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [authRole, setAuthRole] = useState<AuthRoleType>('jobseeker');
   const [hasDismissedAuthScroll, setHasDismissedAuthScroll] = useState<boolean>(() => {
     try {
@@ -291,6 +291,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       handle: name ? name.toLowerCase().replace(/\s+/g, '') : basePersona.handle,
     });
     setIsAuthModalOpen(false);
+    if (role === 'hr' || role === 'manager' || role === 'interviewer' || role === 'recruiter' || role === 'admin') {
+      setActivePage('hiring');
+    } else {
+      setActivePage('home');
+    }
   };
 
   const logout = () => {
