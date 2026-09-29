@@ -36,6 +36,7 @@ export const JobsPage: React.FC = () => {
     authRole,
     isAuthenticated,
     openAuthModal,
+    navigateTo,
     isPostJobModalOpen,
     openPostJobModal,
     closePostJobModal,
@@ -252,13 +253,21 @@ export const JobsPage: React.FC = () => {
                     </>
                   )}
                 </button>
+              ) : userScore === 0 ? (
+                <button
+                  onClick={() => navigateTo('retest')}
+                  className="px-4 py-2.5 rounded-xl text-xs font-black bg-[#F9BE08] hover:bg-[#EFD30B] text-[#1A1A19] border border-[#1A1A19]/20 shadow-subtle flex items-center gap-1.5 transition-all active:scale-95"
+                >
+                  <Sparkles className="w-4 h-4 text-[#1A1A19]" />
+                  <span>Give Test to Apply</span>
+                </button>
               ) : (
                 <button
-                  disabled
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-red-100 text-red-500 border border-red-200 cursor-not-allowed flex items-center gap-1.5"
+                  onClick={() => navigateTo('retest')}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-[#FAF8F1] hover:bg-[#F9BE08]/20 text-[#1A1A19] border border-[#DFDFD9] flex items-center gap-1.5 transition-all"
                 >
-                  <AlertTriangle className="w-4 h-4 text-red-500" />
-                  <span>Cutoff Not Met</span>
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <span>Retake Test ({domainScore}/{selectedJob.cutoffScore})</span>
                 </button>
               )}
             </div>
@@ -286,7 +295,7 @@ export const JobsPage: React.FC = () => {
                   <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase ${
                     qualifies ? 'bg-green-200 text-green-900' : 'bg-red-200 text-red-900'
                   }`}>
-                    {qualifies ? 'DOMAIN QUALIFIED' : 'NOT QUALIFIED'}
+                    {qualifies ? 'DOMAIN QUALIFIED' : userScore === 0 ? 'NOT TESTED YET' : 'NOT QUALIFIED'}
                   </span>
                 </div>
                 <p className="text-xs text-[#1A1A19]/70 mt-0.5">
@@ -294,9 +303,14 @@ export const JobsPage: React.FC = () => {
                   {' • '}
                   Your <strong>{selectedJob.domainName}</strong> Score:{' '}
                   <strong className={`font-mono ${qualifies ? 'text-green-700' : 'text-red-600'}`}>
-                    {domainScore}/100
+                    {userScore === 0 ? '0 (Not Tested Yet)' : `${domainScore}/100`}
                   </strong>
-                  {!qualifies && (
+                  {!qualifies && userScore === 0 && (
+                    <span className="text-[#1A1A19] font-bold block sm:inline sm:ml-2">
+                      — Check your score by giving the test first!
+                    </span>
+                  )}
+                  {!qualifies && userScore > 0 && (
                     <span className="text-red-600 font-semibold"> (Need {selectedJob.cutoffScore - domainScore} more pts — take Re-Test!)</span>
                   )}
                 </p>
@@ -429,13 +443,21 @@ export const JobsPage: React.FC = () => {
                     </>
                   )}
                 </button>
+              ) : userScore === 0 ? (
+                <button
+                  onClick={() => navigateTo('retest')}
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl text-xs sm:text-sm font-black bg-[#F9BE08] hover:bg-[#EFD30B] text-[#1A1A19] border border-[#1A1A19]/20 shadow-subtle flex items-center justify-center gap-2 transition-all active:scale-95"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Give Test to Calculate Score & Apply</span>
+                </button>
               ) : (
                 <button
-                  disabled
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl text-xs font-bold bg-red-950/80 text-red-300 border border-red-800 cursor-not-allowed flex items-center justify-center gap-2"
+                  onClick={() => navigateTo('retest')}
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl text-xs sm:text-sm font-bold bg-[#FAF8F1] hover:bg-[#F9BE08]/20 text-[#1A1A19] border border-[#DFDFD9] flex items-center justify-center gap-2 transition-all"
                 >
-                  <AlertTriangle className="w-4 h-4 text-red-400" />
-                  <span>Requires Proof Score ≥ {selectedJob.cutoffScore}</span>
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <span>Retake Test to Reach Cutoff ≥ {selectedJob.cutoffScore}</span>
                 </button>
               )}
             </div>
@@ -502,6 +524,26 @@ export const JobsPage: React.FC = () => {
                 </button>
               </div>
             </div>
+          ) : userScore === 0 ? (
+            <div className="bg-white/10 backdrop-blur-md border border-[#F9BE08]/50 rounded-xl p-4 flex items-center gap-3.5 min-w-[240px]">
+              <div className="w-12 h-12 rounded-xl bg-[#F9BE08] text-[#1A1A19] flex items-center justify-center font-bold flex-shrink-0 shadow-md">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#F9BE08] block font-bold">
+                  Not Tested Yet (0/100)
+                </span>
+                <p className="text-xs text-white/80 mt-0.5">
+                  Take the test to calculate score
+                </p>
+                <button
+                  onClick={() => navigateTo('retest')}
+                  className="text-[10px] font-mono font-bold text-[#F9BE08] hover:underline mt-1 block"
+                >
+                  Give Test Now →
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 flex items-center gap-4 min-w-[240px]">
               <img
@@ -528,6 +570,32 @@ export const JobsPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Untested User Test Prompt Banner */}
+      {isAuthenticated && userScore === 0 && (
+        <div className="bg-[#FAF8F1] border-2 border-[#F9BE08] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-subtle">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-[#F9BE08] text-[#1A1A19] flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
+              <Sparkles className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm sm:text-base text-[#1A1A19]">
+                Check Your Score — Give the Proof Test First
+              </h3>
+              <p className="text-xs text-[#1A1A19]/70 mt-0.5">
+                Your profile is active with 0 proof score. Give the 6-stage technical test to unlock domain scores and apply to curated roles.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigateTo('retest')}
+            className="w-full sm:w-auto py-2.5 px-5 bg-[#1A1A19] hover:bg-[#2E2E2D] text-[#F9BE08] font-black text-xs rounded-xl shadow-subtle flex items-center justify-center gap-2 whitespace-nowrap transition-all active:scale-95"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Give Test Now →</span>
+          </button>
+        </div>
+      )}
 
       {/* Guest Locked Notice Banner */}
       {!isAuthenticated && (

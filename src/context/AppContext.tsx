@@ -248,6 +248,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrUser(persona);
   };
 
+  const buildCleanUser = (params: {
+    id: string;
+    name: string;
+    email: string;
+    role: AuthRoleType;
+    avatar?: string;
+    headline?: string;
+  }): User => {
+    const cleanHandle = params.name ? params.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user';
+    const avatarUrl =
+      params.avatar ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(params.name)}&background=1A1A19&color=F9BE08&bold=true`;
+
+    let userScore: User['score'] = {
+      overall: 0,
+      projectQuality: 0,
+      communityReputation: 0,
+      consistency: 0,
+      skillVerification: 0,
+      engagement: 0,
+      domainKnowledge: 0,
+      logicProblemSolving: 0,
+      softSkillsVoice: 0,
+      domainScores: {},
+      proficientLanguages: [],
+    };
+
+    try {
+      const cachedScore = localStorage.getItem(`pitchx_user_score_${params.id}`);
+      if (cachedScore) {
+        userScore = JSON.parse(cachedScore);
+      }
+    } catch {
+      // ignore
+    }
+
+    return {
+      id: params.id,
+      name: params.name,
+      handle: cleanHandle,
+      avatar: avatarUrl,
+      headline: params.headline || (params.role === 'hr' ? 'Talent Partner • Employer' : 'Candidate • Verified Builder'),
+      bio: '',
+      location: '',
+      website: '',
+      github: '',
+      followersCount: 0,
+      followingCount: 0,
+      projectsCount: 0,
+      upvotesReceived: 0,
+      profileViews: 0,
+      isFollowing: false,
+      score: userScore,
+      skills: [],
+      certifications: [],
+    };
+  };
+
   // Session restore from Supabase on mount
   useEffect(() => {
     let isMounted = true;
@@ -266,17 +324,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               ? 'admin'
               : 'jobseeker';
 
-          const basePersona = personaUsers[mappedRole] || currentUser;
+          const cleanUser = buildCleanUser({
+            id: sessionUser.id,
+            name: sessionUser.name || 'User',
+            email: sessionUser.email,
+            role: mappedRole,
+            avatar: sessionUser.avatar_url,
+            headline: sessionUser.headline,
+          });
+
           setIsAuthenticated(true);
           setAuthRole(mappedRole);
-          setCurrUser({
-            ...basePersona,
-            id: sessionUser.id,
-            name: sessionUser.name || basePersona.name,
-            avatar: sessionUser.avatar_url || basePersona.avatar,
-            headline: sessionUser.headline || basePersona.headline,
-            handle: sessionUser.name ? sessionUser.name.toLowerCase().replace(/\s+/g, '') : basePersona.handle,
-          });
+          setCurrUser(cleanUser);
+          setNotifications([]);
+          setProjects((prev) => prev.map((p) => ({ ...p, isSaved: false })));
         }
       } catch (err) {
         console.warn('Session restoration error:', err);
@@ -321,17 +382,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     avatar?: string;
     designation?: string;
   }) => {
+    const cleanUser = buildCleanUser({
+      id: `usr_${Date.now()}`,
+      name: name || 'User',
+      email: email,
+      role: role,
+      avatar: avatar,
+      headline: designation,
+    });
+
     setIsAuthenticated(true);
     setAuthRole(role);
-    const basePersona = personaUsers[role] || currentUser;
-    
-    setCurrUser({
-      ...basePersona,
-      name: name || basePersona.name,
-      avatar: avatar || basePersona.avatar,
-      headline: designation || basePersona.headline,
-      handle: name ? name.toLowerCase().replace(/\s+/g, '') : basePersona.handle,
-    });
+    setCurrUser(cleanUser);
+    setNotifications([]);
+    setProjects((prev) => prev.map((p) => ({ ...p, isSaved: false })));
+    setAppliedJobs([]);
     setIsAuthModalOpen(false);
     if (role === 'hr' || role === 'manager' || role === 'interviewer' || role === 'recruiter' || role === 'admin') {
       setActivePage('hiring');
@@ -344,6 +409,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await authService.signOut();
     setIsAuthenticated(false);
     setCurrUser(currentUser);
+    setNotifications([]);
+    setAppliedJobs([]);
     setActivePage('home');
   };
 
@@ -382,13 +449,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateUserScore = (newScore: Partial<User['score']>) => {
-    setCurrUser((prev) => ({
-      ...prev,
-      score: {
+    setCurrUser((prev) => {
+      const updatedScore = {
         ...prev.score,
         ...newScore,
-      },
-    }));
+      };
+      try {
+        if (prev.id) {
+          localStorage.setItem(`pitchx_user_score_${prev.id}`, JSON.stringify(updatedScore));
+        }
+      } catch {
+        // ignore
+      }
+      return {
+        ...prev,
+        score: updatedScore,
+      };
+    });
     setUsers((prev) =>
       prev.map((u) =>
         u.id === currUser.id

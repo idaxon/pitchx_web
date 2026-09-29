@@ -194,7 +194,9 @@ export const LeftSidebar: React.FC = () => {
                 Followers
               </span>
               <span className="text-sm font-extrabold text-[#1A1A19]">
-                {(currentUser.followersCount / 1000).toFixed(1)}K
+                {currentUser.followersCount >= 1000
+                  ? `${(currentUser.followersCount / 1000).toFixed(1)}K`
+                  : currentUser.followersCount}
               </span>
             </div>
             <div>
@@ -227,7 +229,7 @@ export const LeftSidebar: React.FC = () => {
             </div>
           </div>
 
-          {/* Action Button: Post Job / Re-Test */}
+          {/* Action Button: Post Job / Give Test / Re-Test */}
           {isEnterpriseRole ? (
             <button
               onClick={() => openPostJobModal()}
@@ -235,6 +237,14 @@ export const LeftSidebar: React.FC = () => {
             >
               <Plus className="w-3.5 h-3.5 text-[#1A1A19] group-hover:rotate-90 transition-transform" />
               <span>Post a New Job</span>
+            </button>
+          ) : currentUser.score.overall === 0 ? (
+            <button
+              onClick={() => navigateTo('retest')}
+              className="w-full mt-2 py-2.5 px-3 bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-[0.98] text-[#1A1A19] text-xs font-black rounded-lg border border-[#1A1A19]/20 shadow-subtle flex items-center justify-center gap-1.5 transition-all animate-pulse"
+            >
+              <Sparkles className="w-4 h-4 text-[#1A1A19]" />
+              <span>Give Test to Check Score</span>
             </button>
           ) : (
             <button
