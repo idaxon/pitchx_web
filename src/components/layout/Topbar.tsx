@@ -109,98 +109,9 @@ export const Topbar: React.FC = () => {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* If NOT Authenticated: Show Clean Sign In & Sign Up buttons + Quick Test Personas */}
+          {/* If NOT Authenticated: Show Sign In & Sign Up */}
           {!isAuthenticated ? (
             <div className="flex items-center gap-2">
-              <div className="relative group">
-                <button
-                  type="button"
-                  className="px-2.5 py-1.5 text-[11px] font-mono font-bold text-[#1A1A19] bg-[#FAF8F1] hover:bg-[#F9BE08]/20 rounded-xl border border-[#DFDFD9] flex items-center gap-1.5 transition-all"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[#F9BE08]" />
-                  <span className="hidden sm:inline">Test Roles</span>
-                  <span className="sm:hidden">Roles</span>
-                  <ChevronDown className="w-3 h-3 text-[#1A1A19]/50" />
-                </button>
-
-                {/* Dropdown Menu for 1-click role login */}
-                <div className="absolute right-0 top-full mt-1.5 w-60 bg-white border border-[#DFDFD9] rounded-2xl p-2 shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50 space-y-1">
-                  <div className="px-2 py-1 text-[10px] font-mono uppercase text-[#1A1A19]/50 font-bold border-b border-[#DFDFD9]/60">
-                    1-Click Test Personas
-                  </div>
-                  <button
-                    onClick={() =>
-                      login({
-                        email: 'candidate@pitchx.dev',
-                        role: 'jobseeker',
-                        name: 'Amélie Laurent',
-                        designation: 'Senior Full Stack Engineer & Candidate',
-                      })
-                    }
-                    className="w-full text-left p-2 rounded-xl hover:bg-[#F9BE08]/15 text-xs font-bold text-[#1A1A19] flex items-center justify-between transition-colors"
-                  >
-                    <span className="flex items-center gap-1.5"><span>🎯</span> Candidate</span>
-                    <span className="text-[10px] text-[#1A1A19]/50 font-mono">Job Seeker</span>
-                  </button>
-                  <button
-                    onClick={() =>
-                      login({
-                        email: 'hr@pitchx.dev',
-                        role: 'hr',
-                        name: 'Ananya Sharma',
-                        designation: 'Head of HR & Talent Acquisition',
-                      })
-                    }
-                    className="w-full text-left p-2 rounded-xl hover:bg-blue-50 text-xs font-bold text-blue-900 flex items-center justify-between transition-colors"
-                  >
-                    <span className="flex items-center gap-1.5"><span>🔍</span> HR Lead</span>
-                    <span className="text-[10px] text-blue-700/60 font-mono">ATS & Pipeline</span>
-                  </button>
-                  <button
-                    onClick={() =>
-                      login({
-                        email: 'manager@pitchx.dev',
-                        role: 'manager',
-                        name: 'Rahul Mehta',
-                        designation: 'Engineering Manager',
-                      })
-                    }
-                    className="w-full text-left p-2 rounded-xl hover:bg-amber-50 text-xs font-bold text-amber-950 flex items-center justify-between transition-colors"
-                  >
-                    <span className="flex items-center gap-1.5"><span>💼</span> Manager</span>
-                    <span className="text-[10px] text-amber-800/60 font-mono">Review & Approve</span>
-                  </button>
-                  <button
-                    onClick={() =>
-                      login({
-                        email: 'interviewer@pitchx.dev',
-                        role: 'interviewer',
-                        name: 'Amit Verma',
-                        designation: 'Technical Hiring Panel',
-                      })
-                    }
-                    className="w-full text-left p-2 rounded-xl hover:bg-purple-50 text-xs font-bold text-purple-900 flex items-center justify-between transition-colors"
-                  >
-                    <span className="flex items-center gap-1.5"><span>⚡</span> Interviewer</span>
-                    <span className="text-[10px] text-purple-700/60 font-mono">Scorecards</span>
-                  </button>
-                  <button
-                    onClick={() =>
-                      login({
-                        email: 'admin@pitchx.dev',
-                        role: 'admin',
-                        name: 'Sarah Jenkins',
-                        designation: 'VP of Global Talent Acquisition & Admin',
-                      })
-                    }
-                    className="w-full text-left p-2 rounded-xl hover:bg-rose-50 text-xs font-bold text-rose-900 flex items-center justify-between transition-colors"
-                  >
-                    <span className="flex items-center gap-1.5"><span>🏆</span> Admin</span>
-                    <span className="text-[10px] text-rose-700/60 font-mono">Full ATS</span>
-                  </button>
-                </div>
-              </div>
-
               <button
                 onClick={() => openAuthModal('signin')}
                 className="px-3.5 py-2 text-xs font-bold text-[#1A1A19] hover:text-black bg-white hover:bg-[#F9F8F4] rounded-xl border border-[#DFDFD9] hover:border-[#1A1A19]/30 shadow-subtle transition-all"
@@ -212,7 +123,7 @@ export const Topbar: React.FC = () => {
                 className="px-4 py-2 text-xs font-black text-[#1A1A19] bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-95 rounded-xl border border-[#1A1A19]/15 shadow-subtle flex items-center gap-1.5 transition-all"
               >
                 <Sparkles className="w-3.5 h-3.5 fill-[#1A1A19]" />
-                <span>Join PitchX</span>
+                <span>Join Free</span>
               </button>
             </div>
           ) : (

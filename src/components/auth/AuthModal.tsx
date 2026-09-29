@@ -1,29 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Eye,
   EyeOff,
-  Sparkles,
   Briefcase,
-  CheckCircle2,
+  User,
   ArrowRight,
-  Clock,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Mail,
+  Lock,
+  Building2,
+  ChevronLeft,
 } from 'lucide-react';
-import { useApp, AuthRoleType } from '../../context/AppContext';
+import { useApp } from '../../context/AppContext';
+import { authService } from '../../services/authService';
 
 interface AuthModalProps {
   isOpen?: boolean;
   onClose?: () => void;
   defaultMode?: 'signin' | 'signup';
-  defaultRole?: AuthRoleType;
-  isInline?: boolean; // When rendered as a standalone page vs popup modal
+  isInline?: boolean;
 }
+
+type Step = 'role' | 'form';
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen: propIsOpen,
   onClose: propOnClose,
   defaultMode,
-  defaultRole,
   isInline = false,
 }) => {
   const {
@@ -31,685 +37,517 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     closeAuthModal: contextClose,
     dismissScrollAuth,
     authModalMode: contextMode,
-    authRole: contextRole,
     login,
     navigateTo,
   } = useApp();
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : contextIsOpen;
+
   const handleClose = () => {
     dismissScrollAuth();
-    if (propOnClose) {
-      propOnClose();
-    } else {
-      contextClose();
-    }
+    if (propOnClose) propOnClose();
+    else contextClose();
   };
 
-  const [mode, setMode] = useState<'signin' | 'signup'>(defaultMode || contextMode || 'signup');
-  const [role, setRole] = useState<AuthRoleType>(defaultRole || contextRole || 'jobseeker');
-  const [showPassword, setShowPassword] = useState(false);
+  const [mode, setMode] = useState<'signin' | 'signup'>(defaultMode || contextMode || 'signin');
+  const [step, setStep] = useState<Step>(mode === 'signup' ? 'role' : 'form');
+  const [selectedRole, setSelectedRole] = useState<'candidate' | 'company' | null>(null);
 
-  // Form inputs
+  // Form fields
   const [fullName, setFullName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [extraField, setExtraField] = useState('');
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Sync mode if context changes
-  React.useEffect(() => {
-    if (contextMode && !defaultMode) setMode(contextMode);
+  // Status
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [forgotMode, setForgotMode] = useState(false);
+
+  // Sync mode when context changes
+  useEffect(() => {
+    if (contextMode && !defaultMode) {
+      setMode(contextMode);
+      setStep(contextMode === 'signup' ? 'role' : 'form');
+    }
   }, [contextMode, defaultMode]);
-
-  React.useEffect(() => {
-    if (contextRole && !defaultRole) setRole(contextRole);
-  }, [contextRole, defaultRole]);
 
   if (!isOpen && !isInline) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const switchMode = (newMode: 'signin' | 'signup') => {
+    setMode(newMode);
+    setStep(newMode === 'signup' ? 'role' : 'form');
+    setSelectedRole(null);
+    setError(null);
+    setSuccess(null);
+    setForgotMode(false);
+    setFullName('');
+    setCompanyName('');
+    setEmail('');
+    setPassword('');
+  };
+
+  const handleRoleSelect = (role: 'candidate' | 'company') => {
+    setSelectedRole(role);
+    setStep('form');
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      setStatusMessage('Please enter a valid email address');
-      return;
-    }
-    if (!password) {
-      setStatusMessage('Please enter your password');
-      return;
-    }
-
-    login({
-      email,
-      role,
-      name: fullName.trim() || (role === 'recruiter' ? 'Sarah Jenkins' : 'Amélie Laurent'),
-    });
-
-    setStatusMessage(null);
-    if (!isInline) {
-      handleClose();
+    if (!email) { setError('Please enter your email address.'); return; }
+    setLoading(true); setError(null);
+    const result = await authService.resetPassword(email.trim());
+    setLoading(false);
+    if (result.success) {
+      setSuccess('Password reset email sent! Check your inbox.');
     } else {
-      navigateTo('home');
+      setError(result.error || 'Failed to send reset email.');
     }
   };
 
-  const handleSocialAuth = (provider: 'google' | 'apple') => {
-    login({
-      email: provider === 'google' ? 'user@gmail.com' : 'user@icloud.com',
-      role,
-      name: role === 'recruiter' ? 'Sarah Jenkins (Recruiter)' : 'Amélie Laurent (Builder)',
-    });
-    if (!isInline) {
-      handleClose();
-    } else {
-      navigateTo('home');
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) { setError('Please fill in all fields.'); return; }
+    setLoading(true); setError(null);
+
+    const result = await authService.signIn(email.trim(), password);
+    setLoading(false);
+
+    if (result.error || !result.user) {
+      setError(result.error || 'Invalid email or password.');
+      return;
     }
+
+    // Map db role to AppContext role
+    const appRole = result.user.role === 'candidate' ? 'jobseeker' :
+      (result.user.role === 'hr' || result.user.role === 'hiring_manager' || result.user.role === 'admin') ? 'hr' :
+      result.user.role === 'technical_interviewer' ? 'interviewer' : 'hr';
+
+    login({
+      email: result.user.email,
+      role: appRole,
+      name: result.user.name,
+      avatar: result.user.avatar_url,
+      designation: result.user.headline,
+    });
+
+    if (!isInline) handleClose();
+    else navigateTo(appRole === 'jobseeker' ? 'home' : 'hiring');
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password || !fullName) { setError('Please fill in all required fields.'); return; }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (!selectedRole) { setError('Please select your account type.'); return; }
+
+    const dbRole = selectedRole === 'candidate' ? 'candidate' : 'hr';
+    const headline = selectedRole === 'company'
+      ? (companyName ? `Hiring at ${companyName}` : 'Talent Acquisition & HR')
+      : 'Builder & Job Seeker';
+
+    setLoading(true); setError(null);
+
+    const result = await authService.signUp({
+      email: email.trim(),
+      password,
+      name: fullName.trim(),
+      role: dbRole as any,
+      headline,
+    });
+
+    setLoading(false);
+
+    if (result.error || !result.user) {
+      setError(result.error || 'Registration failed. Please try again.');
+      return;
+    }
+
+    setSuccess('Account created! Please check your email to verify your account, then sign in.');
+    setTimeout(() => switchMode('signin'), 3000);
   };
 
   const content = (
     <div
-      className={`relative w-full ${
-        isInline ? 'max-w-5xl' : 'max-w-5xl'
-      } bg-gradient-to-br from-[#FBF9F3] via-[#F8F6EC] to-[#EFEAD9] text-[#1A1A19] rounded-[28px] sm:rounded-[36px] border border-[#DFDFD9] shadow-2xl overflow-hidden animate-fade-in`}
+      className={`relative w-full max-w-4xl bg-[#F9F8F4] text-[#1A1A19] rounded-[24px] border border-[#DFDFD9] shadow-2xl overflow-hidden animate-fade-in`}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[580px] sm:min-h-[620px]">
-        {/* ================= LEFT COLUMN: AUTH FORM ================= */}
-        <div className="lg:col-span-6 p-6 sm:p-10 flex flex-col justify-between relative z-10">
-          {/* Top Bar: Brand Pill */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[580px]">
+
+        {/* ───── LEFT: Auth Form ───── */}
+        <div className="p-8 sm:p-10 flex flex-col justify-between relative z-10">
+          {/* Close button (modal mode) */}
+          {!isInline && (
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white border border-[#DFDFD9] hover:border-[#1A1A19]/30 text-[#1A1A19] flex items-center justify-center shadow-sm transition-all z-10"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+
           <div>
-            <div className="flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#DFDFD9] shadow-xs backdrop-blur-sm">
-                <span className="w-2 h-2 rounded-full bg-[#F9BE08] animate-pulse" />
-                <span className="text-xs font-extrabold tracking-tight text-[#1A1A19]">
-                  PitchX
-                </span>
-                <span className="text-[10px] font-mono text-[#1A1A19]/50 uppercase">
-                  Proof Network
-                </span>
+            {/* Logo */}
+            <div className="flex items-center gap-2.5 mb-8">
+              <div className="w-9 h-9 bg-[#1A1A19] rounded-xl flex items-center justify-center">
+                <span className="text-[#F9BE08] font-black text-sm">P</span>
               </div>
-
-              {/* Close button for mobile / top left */}
-              {!isInline && (
-                <button
-                  onClick={handleClose}
-                  className="lg:hidden p-1.5 rounded-full bg-white/70 hover:bg-white text-[#1A1A19]/70 hover:text-[#1A1A19] border border-[#DFDFD9] transition-all"
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+              <span className="font-black text-lg text-[#1A1A19] tracking-tight">PitchX</span>
             </div>
 
-            {/* Header Text */}
-            <div className="mt-4 sm:mt-6">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1A1A19] tracking-tight">
-                {mode === 'signup' ? 'Create an Account' : 'Welcome to PitchX'}
-              </h2>
-              <p className="text-xs sm:text-sm text-[#1A1A19]/65 mt-1 font-medium">
-                {mode === 'signup'
-                  ? 'Join PitchX as a Candidate, HR Specialist, Hiring Manager, or Technical Reviewer.'
-                  : 'Sign in to access your proof portfolio, ATS pipeline, and interviews.'}
-              </p>
-            </div>
+            {/* Title */}
+            <h2 className="text-2xl font-black text-[#1A1A19] leading-tight">
+              {forgotMode ? 'Reset Password' :
+               mode === 'signup' && step === 'role' ? 'Create your account' :
+               mode === 'signup' ? `Sign up as ${selectedRole === 'company' ? 'Company' : 'Candidate'}` :
+               'Welcome back'}
+            </h2>
+            <p className="text-sm text-[#1A1A19]/60 mt-1.5 leading-relaxed">
+              {forgotMode ? "We'll send a reset link to your email." :
+               mode === 'signup' && step === 'role' ? 'Select your account type to get started.' :
+               mode === 'signup' ? 'Fill in your details to create your PitchX account.' :
+               'Sign in to continue to your dashboard.'}
+            </p>
 
-            {/* ── Quick 1-Click Test Role Logins ── */}
-            <div className="mt-4 p-3 bg-white/90 border border-[#DFDFD9] rounded-2xl space-y-2 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-black uppercase tracking-wider text-[#1A1A19]/80 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#F9BE08]" /> Quick 1-Click Test Personas
-                </span>
-                <span className="text-[10px] text-emerald-700 font-mono font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                  Ready to Test
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                {/* 1. Job Seeker */}
+            {/* ── SIGNUP: Step 1 — Role Selection ── */}
+            {mode === 'signup' && step === 'role' && (
+              <div className="mt-8 space-y-3">
                 <button
-                  type="button"
-                  onClick={() => {
-                    login({
-                      email: 'candidate@pitchx.dev',
-                      role: 'jobseeker',
-                      name: 'Amélie Laurent',
-                      designation: 'Senior Full Stack Engineer & UI Architect',
-                    });
-                    handleClose();
-                  }}
-                  className="p-2 rounded-xl border border-[#F9BE08]/60 bg-[#F9BE08]/15 hover:bg-[#F9BE08]/30 text-left transition-all group"
+                  onClick={() => handleRoleSelect('candidate')}
+                  className="w-full p-5 border-2 border-[#DFDFD9] hover:border-[#F9BE08] bg-white hover:bg-[#F9BE08]/5 rounded-2xl text-left transition-all group flex items-center gap-4"
                 >
-                  <div className="text-[11px] font-black text-yellow-950 flex items-center gap-1">
-                    <span>🎯</span> Candidate
+                  <div className="w-12 h-12 rounded-2xl bg-[#F9BE08]/15 flex items-center justify-center shrink-0 group-hover:bg-[#F9BE08]/30 transition-colors">
+                    <User className="w-6 h-6 text-[#1A1A19]" />
                   </div>
-                  <div className="text-[9px] text-yellow-900/80 font-mono truncate">candidate@pitchx.dev</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-[#1A1A19] text-base">I'm a Candidate</div>
+                    <div className="text-sm text-[#1A1A19]/60 mt-0.5">Looking for jobs, showcase my work & skills</div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-[#1A1A19]/30 group-hover:text-[#1A1A19]/60 transition-colors" />
                 </button>
 
-                {/* 2. HR Lead */}
                 <button
-                  type="button"
-                  onClick={() => {
-                    login({
-                      email: 'hr@pitchx.dev',
-                      role: 'hr',
-                      name: 'Ananya Sharma',
-                      designation: 'Lead Talent Partner & Head of HR',
-                    });
-                    handleClose();
-                  }}
-                  className="p-2 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-left transition-all group"
+                  onClick={() => handleRoleSelect('company')}
+                  className="w-full p-5 border-2 border-[#DFDFD9] hover:border-[#1A1A19] bg-white hover:bg-[#1A1A19]/5 rounded-2xl text-left transition-all group flex items-center gap-4"
                 >
-                  <div className="text-[11px] font-black text-blue-900 flex items-center gap-1">
-                    <span>🔍</span> HR Lead
+                  <div className="w-12 h-12 rounded-2xl bg-[#1A1A19]/10 flex items-center justify-center shrink-0 group-hover:bg-[#1A1A19]/20 transition-colors">
+                    <Building2 className="w-6 h-6 text-[#1A1A19]" />
                   </div>
-                  <div className="text-[9px] text-blue-700/80 font-mono truncate">hr@pitchx.dev</div>
-                </button>
-
-                {/* 3. Manager */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    login({
-                      email: 'manager@pitchx.dev',
-                      role: 'manager',
-                      name: 'Rahul Mehta',
-                      designation: 'Engineering Manager (Design Systems)',
-                    });
-                    handleClose();
-                  }}
-                  className="p-2 rounded-xl border border-amber-300 bg-amber-50/80 hover:bg-amber-100 text-left transition-all group"
-                >
-                  <div className="text-[11px] font-black text-amber-950 flex items-center gap-1">
-                    <span>💼</span> Manager
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-[#1A1A19] text-base">I'm a Company / HR</div>
+                    <div className="text-sm text-[#1A1A19]/60 mt-0.5">Hiring talent, posting jobs & managing pipelines</div>
                   </div>
-                  <div className="text-[9px] text-amber-800/80 font-mono truncate">manager@pitchx.dev</div>
+                  <ArrowRight className="w-5 h-5 text-[#1A1A19]/30 group-hover:text-[#1A1A19]/60 transition-colors" />
                 </button>
-
-                {/* 4. Interviewer */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    login({
-                      email: 'interviewer@pitchx.dev',
-                      role: 'interviewer',
-                      name: 'Amit Verma',
-                      designation: 'Principal Staff Engineer & Tech Panel',
-                    });
-                    handleClose();
-                  }}
-                  className="p-2 rounded-xl border border-purple-200 bg-purple-50/80 hover:bg-purple-100 text-left transition-all group"
-                >
-                  <div className="text-[11px] font-black text-purple-900 flex items-center gap-1">
-                    <span>⚡</span> Interviewer
-                  </div>
-                  <div className="text-[9px] text-purple-700/80 font-mono truncate">interviewer@pitchx.dev</div>
-                </button>
-
-                {/* 5. Admin */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    login({
-                      email: 'admin@pitchx.dev',
-                      role: 'admin',
-                      name: 'Sarah Jenkins',
-                      designation: 'VP of Global Talent Acquisition & Admin',
-                    });
-                    handleClose();
-                  }}
-                  className="p-2 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-left transition-all group col-span-2 sm:col-span-1"
-                >
-                  <div className="text-[11px] font-black text-rose-900 flex items-center gap-1">
-                    <span>🏆</span> Admin
-                  </div>
-                  <div className="text-[9px] text-rose-700/80 font-mono truncate">admin@pitchx.dev</div>
-                </button>
-              </div>
-            </div>
-
-            {/* Role Switcher on Sign-Up */}
-            {mode === 'signup' && (
-              <div className="mt-4 space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-[#1A1A19]/70 block">
-                  I am joining as:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Candidate */}
-                  <button
-                    type="button"
-                    onClick={() => setRole('jobseeker')}
-                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
-                      role === 'jobseeker'
-                        ? 'bg-white border-[#F9BE08] shadow-sm ring-2 ring-[#F9BE08]/40'
-                        : 'bg-white/60 hover:bg-white border-[#DFDFD9] text-[#1A1A19]/70'
-                    }`}
-                  >
-                    <span className="text-base">🎯</span>
-                    <div className="min-w-0">
-                      <div className="text-xs font-extrabold text-[#1A1A19]">Job Seeker</div>
-                      <div className="text-[9px] text-[#1A1A19]/60 font-medium truncate">Proof & Jobs</div>
-                    </div>
-                  </button>
-
-                  {/* HR Lead */}
-                  <button
-                    type="button"
-                    onClick={() => setRole('hr')}
-                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
-                      role === 'hr'
-                        ? 'bg-white border-blue-400 shadow-sm ring-2 ring-blue-300'
-                        : 'bg-white/60 hover:bg-white border-[#DFDFD9] text-[#1A1A19]/70'
-                    }`}
-                  >
-                    <span className="text-base">🔍</span>
-                    <div className="min-w-0">
-                      <div className="text-xs font-extrabold text-[#1A1A19]">HR Specialist</div>
-                      <div className="text-[9px] text-[#1A1A19]/60 font-medium truncate">ATS & Offers</div>
-                    </div>
-                  </button>
-
-                  {/* Manager */}
-                  <button
-                    type="button"
-                    onClick={() => setRole('manager')}
-                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
-                      role === 'manager'
-                        ? 'bg-white border-amber-400 shadow-sm ring-2 ring-amber-300'
-                        : 'bg-white/60 hover:bg-white border-[#DFDFD9] text-[#1A1A19]/70'
-                    }`}
-                  >
-                    <span className="text-base">💼</span>
-                    <div className="min-w-0">
-                      <div className="text-xs font-extrabold text-[#1A1A19]">Hiring Manager</div>
-                      <div className="text-[9px] text-[#1A1A19]/60 font-medium truncate">Review & Approvals</div>
-                    </div>
-                  </button>
-
-                  {/* Interviewer */}
-                  <button
-                    type="button"
-                    onClick={() => setRole('interviewer')}
-                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
-                      role === 'interviewer'
-                        ? 'bg-white border-purple-400 shadow-sm ring-2 ring-purple-300'
-                        : 'bg-white/60 hover:bg-white border-[#DFDFD9] text-[#1A1A19]/70'
-                    }`}
-                  >
-                    <span className="text-base">⚡</span>
-                    <div className="min-w-0">
-                      <div className="text-xs font-extrabold text-[#1A1A19]">Tech Interviewer</div>
-                      <div className="text-[9px] text-[#1A1A19]/60 font-medium truncate">Evaluations & Scores</div>
-                    </div>
-                  </button>
-                </div>
               </div>
             )}
 
-            {/* Main Form */}
-            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-              {statusMessage && (
-                <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 text-xs font-semibold">
-                  {statusMessage}
-                </div>
-              )}
+            {/* ── SIGNUP: Step 2 — Form ── */}
+            {mode === 'signup' && step === 'form' && (
+              <form onSubmit={handleSignUp} className="mt-6 space-y-4">
+                <button
+                  type="button"
+                  onClick={() => { setStep('role'); setError(null); }}
+                  className="flex items-center gap-1.5 text-xs text-[#1A1A19]/60 hover:text-[#1A1A19] transition-colors mb-2"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> Change account type
+                </button>
 
-              {/* Full Name for Signup */}
-              {mode === 'signup' && (
+                {/* Role badge */}
+                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                  selectedRole === 'company'
+                    ? 'bg-[#1A1A19] text-[#F9BE08] border-[#1A1A19]'
+                    : 'bg-[#F9BE08] text-[#1A1A19] border-[#F9BE08]'
+                }`}>
+                  {selectedRole === 'company' ? <Building2 className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                  {selectedRole === 'company' ? 'Company Account' : 'Candidate Account'}
+                </div>
+
+                {/* Full Name */}
                 <div>
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#1A1A19]/70 mb-1 block">
-                    Full name
-                  </label>
+                  <label className="block text-xs font-bold text-[#1A1A19]/70 mb-1.5">Full Name *</label>
                   <input
                     type="text"
-                    required
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder={
-                      role === 'hr' ? 'Elena Rostova' :
-                      role === 'manager' ? 'Marcus Vance' :
-                      role === 'interviewer' ? 'Aria Chen' :
-                      'Amélie Laurent'
-                    }
-                    className="w-full px-4 py-2.5 bg-white/90 hover:bg-white focus:bg-white border border-[#DFDFD9] focus:border-[#1A1A19] rounded-xl text-xs sm:text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/35 focus:outline-none focus:ring-2 focus:ring-[#F9BE08]/30 transition-all shadow-xs"
-                  />
-                </div>
-              )}
-
-              {/* Email */}
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-[#1A1A19]/70 mb-1 block">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={
-                    mode === 'signin'
-                      ? 'e.g. ananya.sharma@pitchx.talent or rahul.mehta@stripe.eng'
-                      : role === 'hr'
-                      ? 'elena.hr@company.com'
-                      : role === 'manager'
-                      ? 'marcus.eng@company.com'
-                      : 'amelielaurent7622@gmail.com'
-                  }
-                  className="w-full px-4 py-2.5 bg-white/90 hover:bg-white focus:bg-white border border-[#DFDFD9] focus:border-[#1A1A19] rounded-xl text-xs sm:text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/35 focus:outline-none focus:ring-2 focus:ring-[#F9BE08]/30 transition-all shadow-xs"
-                />
-              </div>
-
-              {/* Role specific dynamic field for Signup */}
-              {mode === 'signup' && (
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#1A1A19]/70 mb-1 block">
-                    {role === 'jobseeker' ? 'Primary Skill / Domain' : 'Department & Title'}
-                  </label>
-                  <input
-                    type="text"
-                    value={extraField}
-                    onChange={(e) => setExtraField(e.target.value)}
-                    placeholder={
-                      role === 'jobseeker'
-                        ? 'e.g. Full Stack React + TypeScript, AI/ML'
-                        : 'e.g. Core Engineering, Talent Acquisition'
-                    }
-                    className="w-full px-4 py-2.5 bg-white/90 hover:bg-white focus:bg-white border border-[#DFDFD9] focus:border-[#1A1A19] rounded-xl text-xs sm:text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/35 focus:outline-none focus:ring-2 focus:ring-[#F9BE08]/30 transition-all shadow-xs"
-                  />
-                </div>
-              )}
-
-              {/* Password */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#1A1A19]/70 block">
-                    Password
-                  </label>
-                  {mode === 'signin' && (
-                    <span className="text-[10px] text-[#1A1A19]/50 font-mono">
-                      (Demo: <code className="text-[#1A1A19] font-bold">password123</code>)
-                    </span>
-                  )}
-                </div>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
+                    onChange={e => setFullName(e.target.value)}
+                    placeholder={selectedRole === 'company' ? 'Your full name' : 'Your full name'}
                     required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••••••••••"
-                    className="w-full px-4 py-2.5 pr-11 bg-white/90 hover:bg-white focus:bg-white border border-[#DFDFD9] focus:border-[#1A1A19] rounded-xl text-xs sm:text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/35 focus:outline-none focus:ring-2 focus:ring-[#F9BE08]/30 transition-all shadow-xs font-mono"
+                    className="w-full px-4 py-3 rounded-xl border border-[#DFDFD9] focus:border-[#1A1A19] focus:ring-2 focus:ring-[#1A1A19]/10 bg-white text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/40 outline-none transition-all"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1A19]/50 hover:text-[#1A1A19] transition-colors p-1"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
                 </div>
-              </div>
 
-              {/* Submit Pill Button */}
-              <button
-                type="submit"
-                id="auth-submit-btn"
-                className="w-full mt-2 py-3 px-6 bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-[0.99] text-[#1A1A19] font-black text-sm rounded-xl border border-[#1A1A19]/15 shadow-md flex items-center justify-center gap-2 transition-all group"
-              >
-                <span>{mode === 'signup' ? 'Create Account & Continue' : 'Sign In to Account'}</span>
-                <ArrowRight className="w-4 h-4 stroke-[2.5] group-hover:translate-x-1 transition-transform" />
-              </button>
+                {/* Company Name (company only) */}
+                {selectedRole === 'company' && (
+                  <div>
+                    <label className="block text-xs font-bold text-[#1A1A19]/70 mb-1.5">Company Name</label>
+                    <input
+                      type="text"
+                      value={companyName}
+                      onChange={e => setCompanyName(e.target.value)}
+                      placeholder="e.g. Stripe, Google, Razorpay"
+                      className="w-full px-4 py-3 rounded-xl border border-[#DFDFD9] focus:border-[#1A1A19] focus:ring-2 focus:ring-[#1A1A19]/10 bg-white text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/40 outline-none transition-all"
+                    />
+                  </div>
+                )}
 
-              {/* Social Login Options */}
-              <div className="grid grid-cols-2 gap-2.5 pt-1">
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-bold text-[#1A1A19]/70 mb-1.5">Work Email *</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A19]/40" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      required
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#DFDFD9] focus:border-[#1A1A19] focus:ring-2 focus:ring-[#1A1A19]/10 bg-white text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/40 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block text-xs font-bold text-[#1A1A19]/70 mb-1.5">Password * (min. 8 characters)</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A19]/40" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="Create a strong password"
+                      required
+                      minLength={8}
+                      className="w-full pl-10 pr-12 py-3 rounded-xl border border-[#DFDFD9] focus:border-[#1A1A19] focus:ring-2 focus:ring-[#1A1A19]/10 bg-white text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/40 outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(p => !p)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1A19]/40 hover:text-[#1A1A19] transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Error / Success */}
+                {error && (
+                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                {success && (
+                  <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>{success}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 bg-[#1A1A19] hover:bg-black text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {loading ? 'Creating account…' : 'Create Account'}
+                </button>
+              </form>
+            )}
+
+            {/* ── SIGN IN Form ── */}
+            {mode === 'signin' && !forgotMode && (
+              <form onSubmit={handleSignIn} className="mt-6 space-y-4">
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-bold text-[#1A1A19]/70 mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A19]/40" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      required
+                      autoFocus
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#DFDFD9] focus:border-[#1A1A19] focus:ring-2 focus:ring-[#1A1A19]/10 bg-white text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/40 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-[#1A1A19]/70">Password</label>
+                    <button
+                      type="button"
+                      onClick={() => { setForgotMode(true); setError(null); setSuccess(null); }}
+                      className="text-xs text-[#1A1A19]/60 hover:text-[#1A1A19] underline underline-offset-2 transition-colors"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A19]/40" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="Your password"
+                      required
+                      className="w-full pl-10 pr-12 py-3 rounded-xl border border-[#DFDFD9] focus:border-[#1A1A19] focus:ring-2 focus:ring-[#1A1A19]/10 bg-white text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/40 outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(p => !p)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1A19]/40 hover:text-[#1A1A19] transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Error / Success */}
+                {error && (
+                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 bg-[#1A1A19] hover:bg-black text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {loading ? 'Signing in…' : 'Sign In'}
+                </button>
+              </form>
+            )}
+
+            {/* ── Forgot Password Form ── */}
+            {mode === 'signin' && forgotMode && (
+              <form onSubmit={handleForgotPassword} className="mt-6 space-y-4">
                 <button
                   type="button"
-                  onClick={() => handleSocialAuth('apple')}
-                  className="w-full py-2.5 px-3 bg-white/80 hover:bg-white border border-[#DFDFD9] hover:border-[#1A1A19]/40 rounded-xl text-xs font-bold text-[#1A1A19] flex items-center justify-center gap-2 transition-all shadow-xs"
+                  onClick={() => { setForgotMode(false); setError(null); setSuccess(null); }}
+                  className="flex items-center gap-1.5 text-xs text-[#1A1A19]/60 hover:text-[#1A1A19] transition-colors mb-2"
                 >
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-2 .6-2.65 1.35-.58.66-1.08 1.73-.95 2.76 1.01.08 2.06-.51 2.68-1.26z" />
-                  </svg>
-                  <span>Apple</span>
+                  <ChevronLeft className="w-3.5 h-3.5" /> Back to Sign In
                 </button>
+                <div>
+                  <label className="block text-xs font-bold text-[#1A1A19]/70 mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A19]/40" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      required
+                      autoFocus
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#DFDFD9] focus:border-[#1A1A19] focus:ring-2 focus:ring-[#1A1A19]/10 bg-white text-sm text-[#1A1A19] placeholder:text-[#1A1A19]/40 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                {success && (
+                  <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>{success}</span>
+                  </div>
+                )}
 
                 <button
-                  type="button"
-                  onClick={() => handleSocialAuth('google')}
-                  className="w-full py-2.5 px-3 bg-white/80 hover:bg-white border border-[#DFDFD9] hover:border-[#1A1A19]/40 rounded-xl text-xs font-bold text-[#1A1A19] flex items-center justify-center gap-2 transition-all shadow-xs"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 bg-[#1A1A19] hover:bg-black text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
-                  <span>Google</span>
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {loading ? 'Sending…' : 'Send Reset Link'}
                 </button>
-              </div>
-            </form>
+              </form>
+            )}
           </div>
 
-          {/* Footer Bar */}
-          <div className="mt-4 pt-3 border-t border-[#DFDFD9]/70 flex flex-wrap items-center justify-between text-xs text-[#1A1A19]/65 gap-2">
-            <div>
-              {mode === 'signup' ? (
-                <span>
-                  Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('signin');
-                      setStatusMessage(null);
-                    }}
-                    className="font-bold text-[#1A1A19] underline decoration-[#F9BE08] decoration-2 underline-offset-2 hover:text-black transition-colors"
-                  >
-                    Sign in
-                  </button>
-                </span>
-              ) : (
-                <span>
-                  Don't have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('signup');
-                      setStatusMessage(null);
-                    }}
-                    className="font-bold text-[#1A1A19] underline decoration-[#F9BE08] decoration-2 underline-offset-2 hover:text-black transition-colors"
-                  >
-                    Create Account
-                  </button>
-                </span>
-              )}
+          {/* Footer toggle */}
+          {!forgotMode && (
+            <div className="mt-6 pt-5 border-t border-[#DFDFD9] text-center">
+              <span className="text-sm text-[#1A1A19]/60">
+                {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
+                <button
+                  type="button"
+                  onClick={() => switchMode(mode === 'signup' ? 'signin' : 'signup')}
+                  className="font-bold text-[#1A1A19] underline decoration-[#F9BE08] decoration-2 underline-offset-2 hover:text-black transition-colors"
+                >
+                  {mode === 'signup' ? 'Sign In' : 'Create Account'}
+                </button>
+              </span>
             </div>
-
-            <div className="flex items-center gap-3 text-[11px] text-[#1A1A19]/50">
-              <a href="#terms" className="hover:underline hover:text-[#1A1A19]">
-                Terms
-              </a>
-              <span>•</span>
-              <a href="#privacy" className="hover:underline hover:text-[#1A1A19]">
-                Privacy
-              </a>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* ================= RIGHT COLUMN: CREATIVE VISUAL HERO & GLASSMORPHISM WIDGETS ================= */}
-        <div className="lg:col-span-6 p-3 sm:p-4 flex flex-col relative">
-          <div className="w-full h-full min-h-[420px] rounded-[22px] sm:rounded-[28px] overflow-hidden relative shadow-inner bg-slate-900 flex flex-col justify-between p-4 sm:p-6 border border-white/20">
-            {/* Background Image: Creative collaborative workspace */}
-            <img
-              src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&auto=format&fit=crop&q=80"
-              alt="Creative Team Workspace"
-              className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.92] contrast-[1.05]"
-            />
-            {/* Subtle warm overlay gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
+        {/* ───── RIGHT: Visual Panel ───── */}
+        <div className="hidden lg:flex flex-col relative bg-[#1A1A19] p-10 overflow-hidden">
+          {/* Background texture */}
+          <div className="absolute inset-0 opacity-10"
+            style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #F9BE08 1px, transparent 0)', backgroundSize: '32px 32px' }}
+          />
 
-            {/* Desktop Top Close Button */}
-            {!isInline && (
-              <button
-                onClick={handleClose}
-                className="absolute top-4 right-4 z-30 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-[#1A1A19] flex items-center justify-center shadow-lg backdrop-blur-md transition-all hover:scale-105"
-                title="Close"
-              >
-                <X className="w-4 h-4 stroke-[2.5]" />
-              </button>
-            )}
+          <div className="relative z-10 flex flex-col h-full justify-between">
+            {/* Top badge */}
+            <div className="inline-flex items-center gap-2 bg-[#F9BE08] text-[#1A1A19] px-3 py-1.5 rounded-full text-xs font-black w-fit">
+              <Briefcase className="w-3.5 h-3.5" />
+              Industry-Ready Hiring Platform
+            </div>
 
-            {/* TOP FLOATING GLASS WIDGETS (Matching photo) */}
-            <div className="relative z-20 space-y-2 max-w-[260px]">
-              {/* Widget 1: Task Review with Team (Yellow Badge) */}
-              <div className="bg-[#F9BE08] text-[#1A1A19] rounded-2xl p-3 shadow-xl backdrop-blur-md border border-yellow-200/50 transform hover:-translate-y-0.5 transition-transform duration-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold tracking-tight">
-                    Task Review With Team
-                  </span>
-                  <span className="w-2 h-2 rounded-full bg-[#1A1A19] animate-ping" />
+            {/* Central illustration / stats */}
+            <div className="space-y-6">
+              <div>
+                <div className="text-4xl font-black text-white leading-tight">
+                  Hire smarter.<br />
+                  <span className="text-[#F9BE08]">Move faster.</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold mt-1 text-[#1A1A19]/80">
-                  <Clock className="w-3 h-3" />
-                  <span>09:30am - 10:00am</span>
-                </div>
+                <p className="text-white/60 text-sm mt-3 leading-relaxed">
+                  PitchX connects verified candidates with top companies through proof-of-work, not just resumes.
+                </p>
               </div>
 
-              {/* Widget 2: Live Proof Verification pill */}
-              <div className="bg-[#1A1A19]/80 backdrop-blur-md text-white/95 rounded-2xl py-1.5 px-3 text-[10px] font-mono shadow-md border border-white/10 flex items-center justify-between w-[200px]">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#F9BE08]" />
-                  <span>09:30am - 10:00am</span>
-                </div>
-                <span className="text-[9px] font-bold text-[#F9BE08] uppercase">
-                  Proof Live
-                </span>
+              {/* Feature list */}
+              <div className="space-y-3">
+                {[
+                  { icon: '🎯', title: 'Verified Proof of Work', desc: 'Every candidate proves skills with real projects' },
+                  { icon: '⚡', title: 'Smart ATS Pipeline', desc: 'From apply to hired in one seamless workflow' },
+                  { icon: '🔒', title: 'Secure & Private', desc: 'Enterprise-grade security with role-based access' },
+                ].map(f => (
+                  <div key={f.title} className="flex items-start gap-3">
+                    <span className="text-xl leading-none mt-0.5">{f.icon}</span>
+                    <div>
+                      <div className="text-white font-bold text-sm">{f.title}</div>
+                      <div className="text-white/50 text-xs mt-0.5">{f.desc}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* FLOATING CANDIDATE AVATARS STACK (Floating right side) */}
-            <div className="absolute right-4 sm:right-6 top-28 z-20 flex flex-col items-center gap-2">
-              <div className="relative p-1 bg-white/30 backdrop-blur-md rounded-full border border-white/50 shadow-xl group cursor-pointer">
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
-                  alt="Candidate avatar"
-                  className="w-10 h-10 rounded-full object-cover border-2 border-white"
-                />
-                <span className="absolute -bottom-1 -right-1 bg-[#F9BE08] text-[#1A1A19] text-[9px] font-mono font-bold px-1 rounded-full border border-white">
-                  98%
-                </span>
+            {/* Bottom stat cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/10 border border-white/10 rounded-xl p-3">
+                <div className="text-[#F9BE08] font-black text-2xl">12K+</div>
+                <div className="text-white/60 text-xs mt-0.5">Verified Candidates</div>
               </div>
-
-              <div className="relative p-1 bg-white/30 backdrop-blur-md rounded-full border border-white/50 shadow-xl group cursor-pointer ml-3">
-                <img
-                  src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80"
-                  alt="Candidate avatar"
-                  className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                />
-              </div>
-
-              <div className="relative p-1 bg-white/30 backdrop-blur-md rounded-full border border-white/50 shadow-xl group cursor-pointer -ml-2">
-                <img
-                  src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=120&auto=format&fit=crop&q=80"
-                  alt="Candidate avatar"
-                  className="w-7 h-7 rounded-full object-cover border-2 border-white"
-                />
-              </div>
-            </div>
-
-            {/* BOTTOM FLOATING GLASS WIDGETS (Matching photo) */}
-            <div className="relative z-20 space-y-3 pt-8">
-              {/* Calendar Horizontal Glass Strip */}
-              <div className="bg-white/20 backdrop-blur-xl border border-white/40 rounded-2xl p-2.5 sm:p-3 text-white shadow-2xl overflow-hidden">
-                <div className="grid grid-cols-7 gap-1 text-center font-mono text-[10px] sm:text-xs">
-                  <div>
-                    <span className="text-white/60 text-[9px] block">Sun</span>
-                    <span className="font-bold text-white">22</span>
-                  </div>
-                  <div>
-                    <span className="text-white/60 text-[9px] block">Mon</span>
-                    <span className="font-bold text-white">23</span>
-                  </div>
-                  <div>
-                    <span className="text-white/60 text-[9px] block">Tue</span>
-                    <span className="font-bold text-white">24</span>
-                  </div>
-                  <div className="bg-[#F9BE08]/90 text-[#1A1A19] rounded-lg py-0.5 font-extrabold shadow-sm">
-                    <span className="text-[9px] block font-bold">Wed</span>
-                    <span>25</span>
-                  </div>
-                  <div>
-                    <span className="text-white/60 text-[9px] block">Thu</span>
-                    <span className="font-bold text-white">26</span>
-                  </div>
-                  <div>
-                    <span className="text-white/60 text-[9px] block">Fri</span>
-                    <span className="font-bold text-white">27</span>
-                  </div>
-                  <div>
-                    <span className="text-white/60 text-[9px] block">Sat</span>
-                    <span className="font-bold text-white">28</span>
-                  </div>
-                </div>
-
-                {/* Subtle hatched progress texture */}
-                <div className="mt-2 h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#F9BE08] rounded-full w-[65%]" />
-                </div>
-              </div>
-
-              {/* Bottom White Card: Daily Meeting / Shortlist with Avatars */}
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 shadow-2xl border border-white/60 max-w-[260px] transform hover:scale-[1.02] transition-transform">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#1A1A19]">
-                    Daily Talent Pitch
-                  </span>
-                  <span className="w-2 h-2 rounded-full bg-[#F9BE08]" />
-                </div>
-                <div className="text-[11px] font-mono text-[#1A1A19]/60 mt-0.5">
-                  12:00pm - 01:00pm
-                </div>
-                <div className="flex items-center gap-1 mt-2">
-                  <div className="flex -space-x-1.5 overflow-hidden">
-                    <img
-                      className="inline-block h-5 w-5 rounded-full ring-2 ring-white object-cover"
-                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80"
-                      alt="User"
-                    />
-                    <img
-                      className="inline-block h-5 w-5 rounded-full ring-2 ring-white object-cover"
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80"
-                      alt="User"
-                    />
-                    <img
-                      className="inline-block h-5 w-5 rounded-full ring-2 ring-white object-cover"
-                      src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80"
-                      alt="User"
-                    />
-                    <img
-                      className="inline-block h-5 w-5 rounded-full ring-2 ring-white object-cover"
-                      src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80"
-                      alt="User"
-                    />
-                  </div>
-                  <span className="text-[10px] font-mono font-bold text-[#1A1A19]/70 ml-1.5">
-                    +14 builders online
-                  </span>
-                </div>
+              <div className="bg-white/10 border border-white/10 rounded-xl p-3">
+                <div className="text-[#F9BE08] font-black text-2xl">500+</div>
+                <div className="text-white/60 text-xs mt-0.5">Companies Hiring</div>
               </div>
             </div>
           </div>
@@ -719,12 +557,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   );
 
   if (isInline) {
-    return <div className="w-full flex justify-center py-6 sm:py-10 px-3 sm:px-6">{content}</div>;
+    return (
+      <div className="min-h-screen bg-[#F9F8F4] flex items-center justify-center p-4">
+        {content}
+      </div>
+    );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto">
-      <div className="fixed inset-0" onClick={handleClose} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1A1A19]/60 backdrop-blur-md"
+      onClick={e => { if (e.target === e.currentTarget) handleClose(); }}
+    >
       {content}
     </div>
   );

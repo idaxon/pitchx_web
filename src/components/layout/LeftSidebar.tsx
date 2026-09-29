@@ -105,75 +105,14 @@ export const LeftSidebar: React.FC = () => {
               onClick={() => openAuthModal('signup')}
               className="w-full py-2 px-4 bg-[#F9BE08] hover:bg-[#EFD30B] active:scale-95 text-[#1A1A19] text-xs font-black rounded-xl border border-[#1A1A19]/15 shadow-subtle transition-all"
             >
-              Get Started / Sign Up
+              Get Started Free
             </button>
             <button
               onClick={() => openAuthModal('signin')}
               className="w-full py-1.5 px-4 bg-white hover:bg-[#F9F8F4] text-[#1A1A19] text-xs font-bold rounded-xl border border-[#DFDFD9] transition-all"
             >
-              Sign In to Account
+              Sign In
             </button>
-          </div>
-
-          {/* Quick 1-Click Test Persona Logins */}
-          <div className="pt-2 border-t border-[#DFDFD9]/70 text-left">
-            <span className="text-[10px] font-mono font-black uppercase text-[#1A1A19]/60 block mb-1.5 text-center">
-              ⚡ Test Role Portals
-            </span>
-            <div className="grid grid-cols-2 gap-1 text-[11px]">
-              <button
-                onClick={() =>
-                  login({
-                    email: 'candidate@pitchx.dev',
-                    role: 'jobseeker',
-                    name: 'Amélie Laurent',
-                    designation: 'Senior Full Stack Engineer & Candidate',
-                  })
-                }
-                className="py-1 px-1.5 bg-[#F9BE08]/20 hover:bg-[#F9BE08]/40 text-yellow-950 font-bold rounded-lg border border-[#F9BE08]/50 flex items-center gap-1 transition-all"
-              >
-                <span>🎯</span> Candidate
-              </button>
-              <button
-                onClick={() =>
-                  login({
-                    email: 'hr@pitchx.dev',
-                    role: 'hr',
-                    name: 'Ananya Sharma',
-                    designation: 'Head of HR & Talent Acquisition',
-                  })
-                }
-                className="py-1 px-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold rounded-lg border border-blue-200 flex items-center gap-1 transition-all"
-              >
-                <span>🔍</span> HR Lead
-              </button>
-              <button
-                onClick={() =>
-                  login({
-                    email: 'manager@pitchx.dev',
-                    role: 'manager',
-                    name: 'Rahul Mehta',
-                    designation: 'Engineering Manager',
-                  })
-                }
-                className="py-1 px-1.5 bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold rounded-lg border border-amber-200 flex items-center gap-1 transition-all"
-              >
-                <span>💼</span> Manager
-              </button>
-              <button
-                onClick={() =>
-                  login({
-                    email: 'interviewer@pitchx.dev',
-                    role: 'interviewer',
-                    name: 'Amit Verma',
-                    designation: 'Technical Hiring Panel',
-                  })
-                }
-                className="py-1 px-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold rounded-lg border border-purple-200 flex items-center gap-1 transition-all"
-              >
-                <span>⚡</span> Interviewer
-              </button>
-            </div>
           </div>
         </div>
       ) : (

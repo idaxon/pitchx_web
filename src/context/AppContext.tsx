@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   Project,
   User,
@@ -23,6 +23,7 @@ import {
   mockRecruiterJobs,
   initialMockApplications,
 } from '../data/mockRecruiter';
+import { authService } from '../services/authService';
 
 export type PageType =
   | 'home'
@@ -247,6 +248,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrUser(persona);
   };
 
+  // Session restore from Supabase on mount
+  useEffect(() => {
+    let isMounted = true;
+    const restoreSession = async () => {
+      try {
+        const sessionUser = await authService.getCurrentSession();
+        if (sessionUser && isMounted) {
+          const mappedRole: AuthRoleType =
+            sessionUser.role === 'recruiter' || sessionUser.role === 'hr'
+              ? 'hr'
+              : sessionUser.role === 'hiring_manager'
+              ? 'manager'
+              : sessionUser.role === 'technical_interviewer'
+              ? 'interviewer'
+              : sessionUser.role === 'admin'
+              ? 'admin'
+              : 'jobseeker';
+
+          const basePersona = personaUsers[mappedRole] || currentUser;
+          setIsAuthenticated(true);
+          setAuthRole(mappedRole);
+          setCurrUser({
+            ...basePersona,
+            id: sessionUser.id,
+            name: sessionUser.name || basePersona.name,
+            avatar: sessionUser.avatar_url || basePersona.avatar,
+            headline: sessionUser.headline || basePersona.headline,
+            handle: sessionUser.name ? sessionUser.name.toLowerCase().replace(/\s+/g, '') : basePersona.handle,
+          });
+        }
+      } catch (err) {
+        console.warn('Session restoration error:', err);
+      }
+    };
+
+    restoreSession();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const openAuthModal = (mode?: 'signin' | 'signup', role?: AuthRoleType) => {
     if (mode) setAuthModalMode(mode);
     if (role) setAuthRole(role);
@@ -298,8 +340,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await authService.signOut();
     setIsAuthenticated(false);
+    setCurrUser(currentUser);
+    setActivePage('home');
   };
 
   const navigateTo = (page: PageType, payload?: { topic?: TopicItem; user?: User }) => {
