@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   EnterpriseRole,
   EnterpriseUser,
@@ -19,6 +19,13 @@ import {
   initialATSApplications,
   initialHiringNotifications,
 } from '../data/mockHiringData';
+import { workflowService } from '../services/workflowService';
+import { interviewService } from '../services/interviewService';
+import { offerService } from '../services/offerService';
+import { pipelineService } from '../services/pipelineService';
+import { applicationService } from '../services/applicationService';
+import { notificationService } from '../services/notificationService';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 interface ActionCounts {
   hrReviews: number;

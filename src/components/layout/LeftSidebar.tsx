@@ -61,7 +61,7 @@ export const LeftSidebar: React.FC = () => {
   };
 
   const navItems: { id: PageType; label: string; icon: React.ReactNode; badge?: string | number; enterpriseOnly?: boolean }[] = [
-    { id: 'home', label: 'Home Feed', icon: <Home className="w-4 h-4" /> },
+    { id: 'home', label: 'PitchX News', icon: <Home className="w-4 h-4" /> },
     { id: 'explore', label: 'Explore Proofs', icon: <Compass className="w-4 h-4" /> },
     { id: 'profile', label: 'My Projects', icon: <FolderGit2 className="w-4 h-4" /> },
     { id: 'topic', label: 'Trending Topics', icon: <Hash className="w-4 h-4" /> },

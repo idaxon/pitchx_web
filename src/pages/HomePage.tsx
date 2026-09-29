@@ -27,6 +27,27 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="space-y-4 animate-fade-in">
+      {/* PitchX News Header */}
+      <div className="bg-gradient-to-r from-[#1A1A19] via-[#2A2A28] to-[#1A1A19] text-white p-4 rounded-xl border border-[#DFDFD9]/20 shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded bg-[#F9BE08] text-[#1A1A19] text-[10px] font-black uppercase tracking-wider">
+              PITCHX NEWS
+            </span>
+            <span className="text-xs text-white/60 font-mono">Real-time Builder & Industry Feed</span>
+          </div>
+          <p className="text-xs text-white/80 font-medium mt-1">
+            Verified proof-of-work, breakthrough projects, and live engineering updates from the tech frontier.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap text-[11px] text-white/70 font-mono">
+          <span className="px-2 py-1 bg-white/10 rounded-md border border-white/10 hover:bg-white/20 transition-all cursor-pointer">🔥 AI</span>
+          <span className="px-2 py-1 bg-white/10 rounded-md border border-white/10 hover:bg-white/20 transition-all cursor-pointer">⚡ Tech</span>
+          <span className="px-2 py-1 bg-white/10 rounded-md border border-white/10 hover:bg-white/20 transition-all cursor-pointer">🚀 Startups</span>
+          <span className="px-2 py-1 bg-white/10 rounded-md border border-white/10 hover:bg-white/20 transition-all cursor-pointer">💼 Hiring</span>
+        </div>
+      </div>
+
       {/* 1. Post Composer */}
       <PostComposer />
 
