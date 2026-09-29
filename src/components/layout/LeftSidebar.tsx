@@ -19,6 +19,7 @@ import {
   LogOut,
   UserCheck,
   ShieldCheck,
+  Lock,
 } from 'lucide-react';
 import { useApp, PageType, AuthRoleType } from '../../context/AppContext';
 
@@ -26,14 +27,12 @@ export const LeftSidebar: React.FC = () => {
   const {
     currentUser,
     authRole,
-    switchRole,
     isAuthenticated,
     logout,
     recruiterScore,
     openPostJobModal,
     activePage,
     navigateTo,
-    openCreateModal,
     openAuthModal,
     unreadNotificationsCount,
     projects,
@@ -60,14 +59,33 @@ export const LeftSidebar: React.FC = () => {
     }
   };
 
-  const navItems: { id: PageType; label: string; icon: React.ReactNode; badge?: string | number; enterpriseOnly?: boolean }[] = [
+  // Navigation items for guest (unauthenticated) users
+  const guestNavItems: {
+    id: PageType;
+    label: string;
+    icon: React.ReactNode;
+    badge?: string | number;
+    isLocked?: boolean;
+  }[] = [
+    { id: 'home', label: 'PitchX News', icon: <Home className="w-4 h-4" /> },
+    { id: 'explore', label: 'Explore Proofs', icon: <Compass className="w-4 h-4" /> },
+    { id: 'topic', label: 'Trending Topics', icon: <Hash className="w-4 h-4" /> },
+    { id: 'jobs', label: 'Jobs & Hiring', icon: <Briefcase className="w-4 h-4" />, badge: 'Locked', isLocked: true },
+    { id: 'hiring', label: 'Enterprise Hiring Hub', icon: <Building2 className="w-4 h-4" />, badge: 'Locked', isLocked: true },
+  ];
+
+  // Navigation items for logged in candidate users
+  const candidateNavItems: {
+    id: PageType;
+    label: string;
+    icon: React.ReactNode;
+    badge?: string | number;
+  }[] = [
     { id: 'home', label: 'PitchX News', icon: <Home className="w-4 h-4" /> },
     { id: 'explore', label: 'Explore Proofs', icon: <Compass className="w-4 h-4" /> },
     { id: 'profile', label: 'My Projects', icon: <FolderGit2 className="w-4 h-4" /> },
     { id: 'topic', label: 'Trending Topics', icon: <Hash className="w-4 h-4" /> },
     { id: 'jobs', label: 'Jobs & Hiring', icon: <Briefcase className="w-4 h-4" />, badge: '6 Roles' },
-    // Enterprise ATS command center
-    { id: 'hiring', label: 'Enterprise Hiring Hub', icon: <Building2 className="w-4 h-4" />, badge: isEnterpriseRole ? 'ATS' : undefined, enterpriseOnly: true },
     { id: 'bookmarks', label: 'Saved Proofs', icon: <Bookmark className="w-4 h-4" />, badge: savedCount > 0 ? savedCount : undefined },
     { id: 'messages', label: 'Discussions & DMs', icon: <MessageSquare className="w-4 h-4" /> },
     {
@@ -77,6 +95,34 @@ export const LeftSidebar: React.FC = () => {
       badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined,
     },
   ];
+
+  // Navigation items for logged in enterprise/company users
+  const enterpriseNavItems: {
+    id: PageType;
+    label: string;
+    icon: React.ReactNode;
+    badge?: string | number;
+  }[] = [
+    { id: 'home', label: 'PitchX News', icon: <Home className="w-4 h-4" /> },
+    { id: 'hiring', label: 'Enterprise Hiring Hub', icon: <Building2 className="w-4 h-4" />, badge: 'ATS' },
+    { id: 'jobs', label: 'Job Openings', icon: <Briefcase className="w-4 h-4" />, badge: '6 Roles' },
+    { id: 'explore', label: 'Explore Proofs', icon: <Compass className="w-4 h-4" /> },
+    { id: 'topic', label: 'Trending Topics', icon: <Hash className="w-4 h-4" /> },
+    { id: 'messages', label: 'Discussions & DMs', icon: <MessageSquare className="w-4 h-4" /> },
+    {
+      id: 'notifications',
+      label: 'Activity',
+      icon: <Bell className="w-4 h-4" />,
+      badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined,
+    },
+    { id: 'profile', label: 'Company Profile', icon: <FolderGit2 className="w-4 h-4" /> },
+  ];
+
+  const currentNavList = !isAuthenticated
+    ? guestNavItems
+    : isEnterpriseRole
+    ? enterpriseNavItems
+    : candidateNavItems;
 
   const mySpaceItems = [
     { label: 'My Proof Showcase', action: () => navigateTo('profile', { user: currentUser }), icon: <FolderGit2 className="w-3.5 h-3.5" /> },
@@ -217,69 +263,74 @@ export const LeftSidebar: React.FC = () => {
       {/* 2. Main Navigation */}
       <nav className="bg-white border border-[#DFDFD9] rounded-xl p-2 shadow-subtle">
         <div className="space-y-0.5">
-          {navItems
-            .filter((item) => !item.enterpriseOnly || isEnterpriseRole)
-            .map((item) => {
-              const isActive = activePage === item.id;
-              const isHiringItem = item.id === 'hiring';
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigateTo(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    isActive
-                      ? 'bg-[#1A1A19] text-[#F9BE08]'
-                      : isHiringItem
-                      ? 'text-[#1A1A19] bg-[#F9BE08]/20 hover:bg-[#F9BE08]/40 border border-[#F9BE08]/50'
-                      : 'text-[#1A1A19]/80 hover:text-[#1A1A19] hover:bg-[#F9F8F4]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className={isActive ? 'text-[#F9BE08]' : isHiringItem ? 'text-[#1A1A19]' : 'text-[#1A1A19]/70'}>
-                      {item.icon}
-                    </span>
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge !== undefined && (
-                    <span
-                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
-                        isActive
-                          ? 'bg-[#F9BE08] text-[#1A1A19]'
-                          : isHiringItem
-                          ? 'bg-[#1A1A19] text-[#F9BE08]'
-                          : 'bg-[#DFDFD9] text-[#1A1A19]'
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          {currentNavList.map((item) => {
+            const isActive = activePage === item.id;
+            const isLocked = (item as any).isLocked;
+            const isHiringItem = item.id === 'hiring';
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => navigateTo(item.id)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-[#1A1A19] text-[#F9BE08]'
+                    : isHiringItem && !isLocked
+                    ? 'text-[#1A1A19] bg-[#F9BE08]/20 hover:bg-[#F9BE08]/40 border border-[#F9BE08]/50'
+                    : 'text-[#1A1A19]/80 hover:text-[#1A1A19] hover:bg-[#F9F8F4]'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className={isActive ? 'text-[#F9BE08]' : isLocked ? 'text-[#1A1A19]/40' : isHiringItem ? 'text-[#1A1A19]' : 'text-[#1A1A19]/70'}>
+                    {item.icon}
+                  </span>
+                  <span className={isLocked ? 'text-[#1A1A19]/70' : ''}>{item.label}</span>
+                </div>
+                {item.badge !== undefined && (
+                  <span
+                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold flex items-center gap-1 ${
+                      isLocked
+                        ? 'bg-[#FAF8F1] text-[#1A1A19]/60 border border-[#DFDFD9]'
+                        : isActive
+                        ? 'bg-[#F9BE08] text-[#1A1A19]'
+                        : isHiringItem
+                        ? 'bg-[#1A1A19] text-[#F9BE08]'
+                        : 'bg-[#DFDFD9] text-[#1A1A19]'
+                    }`}
+                  >
+                    {isLocked && <Lock className="w-2.5 h-2.5 text-[#1A1A19]/50" />}
+                    <span>{item.badge}</span>
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </nav>
 
-      {/* 3. MY SPACE */}
-      <div className="bg-white border border-[#DFDFD9] rounded-xl p-3 shadow-subtle">
-        <div className="px-2 py-1 flex items-center justify-between">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[#1A1A19]/50 font-bold">
-            My Space
-          </span>
-          <span className="text-[10px] text-[#1A1A19]/40 font-mono">Proof Vault</span>
+      {/* 3. MY SPACE (Only for Authenticated Users) */}
+      {isAuthenticated && (
+        <div className="bg-white border border-[#DFDFD9] rounded-xl p-3 shadow-subtle">
+          <div className="px-2 py-1 flex items-center justify-between">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#1A1A19]/50 font-bold">
+              My Space
+            </span>
+            <span className="text-[10px] text-[#1A1A19]/40 font-mono">Proof Vault</span>
+          </div>
+          <div className="space-y-0.5 mt-1">
+            {mySpaceItems.map((item, idx) => (
+              <button
+                key={idx}
+                onClick={item.action}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[#1A1A19]/75 hover:text-[#1A1A19] hover:bg-[#F9F8F4] rounded-md transition-colors text-left font-medium"
+              >
+                <span className="text-[#1A1A19]/50">{item.icon}</span>
+                <span className="truncate">{item.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="space-y-0.5 mt-1">
-          {mySpaceItems.map((item, idx) => (
-            <button
-              key={idx}
-              onClick={item.action}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[#1A1A19]/75 hover:text-[#1A1A19] hover:bg-[#F9F8F4] rounded-md transition-colors text-left font-medium"
-            >
-              <span className="text-[#1A1A19]/50">{item.icon}</span>
-              <span className="truncate">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* 4. Log Out Option (when authenticated) */}
       {isAuthenticated && (

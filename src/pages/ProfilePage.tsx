@@ -17,6 +17,7 @@ import {
   Zap,
   ShieldCheck,
   ChevronDown,
+  Plus,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ProjectPostCard } from '../components/feed/ProjectPostCard';
@@ -442,8 +443,25 @@ export const ProfilePage: React.FC = () => {
           {userProjects.length > 0 ? (
             userProjects.map((p) => <ProjectPostCard key={p.id} project={p} />)
           ) : (
-            <div className="p-8 text-center bg-white border border-[#DFDFD9] rounded-xl text-xs text-[#1A1A19]/60">
-              No projects showcased by this builder yet.
+            <div className="p-12 text-center bg-white border border-[#DFDFD9] rounded-2xl space-y-3">
+              <FolderGit2 className="w-10 h-10 mx-auto text-[#1A1A19]/20" />
+              <h3 className="font-extrabold text-sm text-[#1A1A19]">
+                {isSelf ? 'No Proofs Uploaded Yet' : 'No Projects Showcased Yet'}
+              </h3>
+              <p className="text-xs text-[#1A1A19]/60 max-w-sm mx-auto">
+                {isSelf
+                  ? 'Showcase your GitHub repos, live production links, system designs, or proof-of-work case studies to boost your Proof Score.'
+                  : 'This builder has not published any verified public proof-of-work projects yet.'}
+              </p>
+              {isSelf && (
+                <button
+                  onClick={() => openCreateModal()}
+                  className="px-4 py-2 bg-[#F9BE08] hover:bg-[#EFD30B] text-[#1A1A19] font-black text-xs rounded-xl border border-[#1A1A19]/20 shadow-subtle inline-flex items-center gap-1.5 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Publish First Proof</span>
+                </button>
+              )}
             </div>
           )}
         </div>

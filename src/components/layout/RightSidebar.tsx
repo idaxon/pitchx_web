@@ -9,6 +9,7 @@ export const RightSidebar: React.FC = () => {
     currentUser,
     handleToggleFollow,
     navigateTo,
+    isAuthenticated,
   } = useApp();
 
   // Exclude current user from suggestions
@@ -64,73 +65,81 @@ export const RightSidebar: React.FC = () => {
         </button>
       </div>
 
-      {/* 2. Who to Follow */}
-      <div className="bg-white border border-[#DFDFD9] rounded-xl p-4 shadow-subtle">
-        <div className="flex items-center justify-between pb-3 border-b border-[#DFDFD9]/70">
-          <div className="flex items-center gap-2">
-            <UserPlus className="w-4 h-4 text-[#1A1A19]" />
-            <h3 className="font-extrabold text-xs tracking-wider uppercase text-[#1A1A19]">
-              Builders to Follow
-            </h3>
-          </div>
-          <span className="text-[11px] text-[#1A1A19]/40 font-mono">Proof-backed</span>
-        </div>
-
-        <div className="space-y-3 mt-3">
-          {suggestedUsers.map((user) => (
-            <div
-              key={user.id}
-              className="flex items-center justify-between gap-2.5 p-1 rounded-lg hover:bg-[#F9F8F4] transition-colors"
-            >
-              <div
-                onClick={() => navigateTo('profile', { user })}
-                className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1"
-              >
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-9 h-9 rounded-lg object-cover border border-[#DFDFD9] flex-shrink-0"
-                />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className="font-bold text-xs text-[#1A1A19] truncate hover:underline">
-                      {user.name}
-                    </span>
-                    <span className="text-[10px] font-mono px-1 py-0.2 bg-[#F9F8F4] text-[#1A1A19] font-semibold rounded border border-[#DFDFD9]">
-                      {user.score.overall}
-                    </span>
-                  </div>
-                  <span className="block text-[11px] text-[#1A1A19]/60 truncate font-medium">
-                    {user.headline.split('•')[0]}
-                  </span>
-                  <span className="text-[10px] text-[#1A1A19]/40 font-mono">
-                    {(user.followersCount / 1000).toFixed(1)}k followers
-                  </span>
-                </div>
-              </div>
-
-              {/* Follow / Unfollow button */}
-              <button
-                onClick={() => handleToggleFollow(user.id)}
-                className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all flex items-center gap-1 flex-shrink-0 ${
-                  user.isFollowing
-                    ? 'bg-[#1A1A19] text-white border-[#1A1A19]'
-                    : 'bg-white text-[#1A1A19] border-[#DFDFD9] hover:border-[#1A1A19] hover:bg-[#F9F8F4]'
-                }`}
-              >
-                {user.isFollowing ? (
-                  <>
-                    <Check className="w-3 h-3 text-[#F9BE08]" />
-                    <span>Following</span>
-                  </>
-                ) : (
-                  <span>+ Follow</span>
-                )}
-              </button>
+      {/* 2. Who to Follow (Only shown when authenticated) */}
+      {isAuthenticated && (
+        <div className="bg-white border border-[#DFDFD9] rounded-xl p-4 shadow-subtle">
+          <div className="flex items-center justify-between pb-3 border-b border-[#DFDFD9]/70">
+            <div className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-[#1A1A19]" />
+              <h3 className="font-extrabold text-xs tracking-wider uppercase text-[#1A1A19]">
+                Builders to Follow
+              </h3>
             </div>
-          ))}
+            <span className="text-[11px] text-[#1A1A19]/40 font-mono">Proof-backed</span>
+          </div>
+
+          <div className="space-y-3 mt-3">
+            {suggestedUsers.length === 0 ? (
+              <p className="text-xs text-[#1A1A19]/50 italic py-2 text-center">
+                No new builder suggestions right now.
+              </p>
+            ) : (
+              suggestedUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between gap-2.5 p-1 rounded-lg hover:bg-[#F9F8F4] transition-colors"
+                >
+                  <div
+                    onClick={() => navigateTo('profile', { user })}
+                    className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1"
+                  >
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-9 h-9 rounded-lg object-cover border border-[#DFDFD9] flex-shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-xs text-[#1A1A19] truncate hover:underline">
+                          {user.name}
+                        </span>
+                        <span className="text-[10px] font-mono px-1 py-0.2 bg-[#F9F8F4] text-[#1A1A19] font-semibold rounded border border-[#DFDFD9]">
+                          {user.score.overall}
+                        </span>
+                      </div>
+                      <span className="block text-[11px] text-[#1A1A19]/60 truncate font-medium">
+                        {user.headline.split('•')[0]}
+                      </span>
+                      <span className="text-[10px] text-[#1A1A19]/40 font-mono">
+                        {(user.followersCount / 1000).toFixed(1)}k followers
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Follow / Unfollow button */}
+                  <button
+                    onClick={() => handleToggleFollow(user.id)}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all flex items-center gap-1 flex-shrink-0 ${
+                      user.isFollowing
+                        ? 'bg-[#1A1A19] text-white border-[#1A1A19]'
+                        : 'bg-white text-[#1A1A19] border-[#DFDFD9] hover:border-[#1A1A19] hover:bg-[#F9F8F4]'
+                    }`}
+                  >
+                    {user.isFollowing ? (
+                      <>
+                        <Check className="w-3 h-3 text-[#F9BE08]" />
+                        <span>Following</span>
+                      </>
+                    ) : (
+                      <span>+ Follow</span>
+                    )}
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 3. Featured High-Score Roles widget */}
       <div className="bg-white border border-[#DFDFD9] rounded-xl p-4 shadow-subtle">

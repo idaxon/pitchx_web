@@ -22,34 +22,51 @@ export const authService = {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error || !session?.user) return null;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
+      const userMeta = session.user.user_metadata || {};
+      const defaultRole: UserRole = (userMeta.role as UserRole) || 'candidate';
+      const defaultName = userMeta.name || session.user.email?.split('@')[0] || 'User';
+      const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(defaultName)}&background=1A1A19&color=F9BE08&bold=true`;
 
-      if (!profile) return null;
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
 
-      // Check organization membership if recruiter role
-      let orgId: string | undefined;
-      const { data: orgMember } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', profile.id)
-        .maybeSingle();
+        if (profile) {
+          let orgId: string | undefined;
+          const { data: orgMember } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', profile.id)
+            .maybeSingle();
 
-      if (orgMember) {
-        orgId = orgMember.organization_id;
+          if (orgMember) {
+            orgId = orgMember.organization_id;
+          }
+
+          return {
+            id: profile.id,
+            email: profile.email,
+            name: profile.name,
+            role: profile.role || defaultRole,
+            avatar_url: profile.avatar_url || defaultAvatar,
+            headline: profile.headline,
+            organization_id: orgId,
+          };
+        }
+      } catch {
+        // DB table not accessible or RLS blocked, fallback to user session metadata
       }
 
       return {
-        id: profile.id,
-        email: profile.email,
-        name: profile.name,
-        role: profile.role,
-        avatar_url: profile.avatar_url,
-        headline: profile.headline,
-        organization_id: orgId,
+        id: session.user.id,
+        email: session.user.email || '',
+        name: defaultName,
+        role: defaultRole,
+        avatar_url: defaultAvatar,
+        headline: defaultRole === 'candidate' ? 'Verified Builder' : 'Talent Partner',
       };
     } catch (err) {
       console.warn('Supabase auth session fetch error:', err);
@@ -73,36 +90,55 @@ export const authService = {
         return { user: null, error: error?.message || 'Invalid email or password' };
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
+      const userMeta = data.user.user_metadata || {};
+      const fallbackRole: UserRole = (userMeta.role as UserRole) || 'candidate';
+      const fallbackName = userMeta.name || data.user.email?.split('@')[0] || 'User';
+      const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=1A1A19&color=F9BE08&bold=true`;
 
-      if (!profile) {
-        return { user: null, error: 'User profile not found in database' };
-      }
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
 
-      let orgId: string | undefined;
-      const { data: orgMember } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', profile.id)
-        .maybeSingle();
+        if (profile) {
+          let orgId: string | undefined;
+          const { data: orgMember } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', profile.id)
+            .maybeSingle();
 
-      if (orgMember) {
-        orgId = orgMember.organization_id;
+          if (orgMember) {
+            orgId = orgMember.organization_id;
+          }
+
+          return {
+            user: {
+              id: profile.id,
+              email: profile.email,
+              name: profile.name,
+              role: profile.role || fallbackRole,
+              avatar_url: profile.avatar_url || fallbackAvatar,
+              headline: profile.headline,
+              organization_id: orgId,
+            },
+            error: null,
+          };
+        }
+      } catch {
+        // ignore profile fetch error
       }
 
       return {
         user: {
-          id: profile.id,
-          email: profile.email,
-          name: profile.name,
-          role: profile.role,
-          avatar_url: profile.avatar_url,
-          headline: profile.headline,
-          organization_id: orgId,
+          id: data.user.id,
+          email: data.user.email || email.trim(),
+          name: fallbackName,
+          role: fallbackRole,
+          avatar_url: fallbackAvatar,
+          headline: fallbackRole === 'candidate' ? 'Verified Builder' : 'Talent Partner',
         },
         error: null,
       };

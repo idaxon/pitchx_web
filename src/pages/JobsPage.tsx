@@ -21,6 +21,7 @@ import {
   Award,
   Globe,
   GitBranch,
+  Lock,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { mockJobs, JobListing } from '../data/mockJobs';
@@ -33,6 +34,8 @@ export const JobsPage: React.FC = () => {
     appliedJobs,
     applyToJob,
     authRole,
+    isAuthenticated,
+    openAuthModal,
     isPostJobModalOpen,
     openPostJobModal,
     closePostJobModal,
@@ -94,6 +97,10 @@ export const JobsPage: React.FC = () => {
   };
 
   const handleApply = (job: JobListing) => {
+    if (!isAuthenticated) {
+      openAuthModal('signin');
+      return;
+    }
     if (!getJobQualifies(job)) return;
     applyToJob(job);
     setApplicationSubmitted(true);
@@ -145,6 +152,26 @@ export const JobsPage: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {!isAuthenticated && (
+          <div className="bg-[#FAF8F1] border border-[#DFDFD9] rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-subtle">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#1A1A19] text-[#F9BE08] flex items-center justify-center flex-shrink-0">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-xs sm:text-sm text-[#1A1A19]">Job Application Locked</h4>
+                <p className="text-xs text-[#1A1A19]/60">Sign in with your Candidate profile to unlock 1-click proof-of-work application submission.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => openAuthModal('signin')}
+              className="py-2 px-4 bg-[#F9BE08] hover:bg-[#EFD30B] text-[#1A1A19] font-black text-xs rounded-xl border border-[#F9BE08] transition-all shadow-subtle whitespace-nowrap"
+            >
+              Sign In to Apply
+            </button>
+          </div>
+        )}
 
         {/* 1. Job Hero Card */}
         <div className="bg-white border border-[#DFDFD9] rounded-2xl p-6 sm:p-8 shadow-subtle space-y-6">
@@ -454,31 +481,82 @@ export const JobsPage: React.FC = () => {
             </p>
           </div>
 
-          {/* User Score Card Badge */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 flex items-center gap-4 min-w-[240px]">
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              className="w-12 h-12 rounded-lg object-cover border-2 border-[#F9BE08]"
-            />
-            <div>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-white/70 block">
-                Your Proof Score
-              </span>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-black font-mono text-[#F9BE08]">
-                  {userScore}
-                </span>
-                <span className="text-xs font-mono text-white/60">/ 100</span>
+          {/* User Score Card Badge / Guest Badge */}
+          {!isAuthenticated ? (
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 flex items-center gap-3.5 min-w-[240px]">
+              <div className="w-12 h-12 rounded-xl bg-[#F9BE08] text-[#1A1A19] flex items-center justify-center font-bold flex-shrink-0 shadow-md">
+                <Lock className="w-6 h-6 stroke-[2.5]" />
               </div>
-              <span className="text-[10px] font-mono text-green-400 flex items-center gap-1 mt-0.5">
-                <CheckCircle2 className="w-3 h-3" />
-                <span>Verified Builder Status</span>
-              </span>
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#F9BE08] block font-bold">
+                  Guest Preview
+                </span>
+                <p className="text-xs text-white/80 mt-0.5">
+                  Sign in to calculate your proof match score
+                </p>
+                <button
+                  onClick={() => openAuthModal('signin')}
+                  className="text-[10px] font-mono font-bold text-[#F9BE08] hover:underline mt-1 block"
+                >
+                  Unlock full access →
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 flex items-center gap-4 min-w-[240px]">
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.name}
+                className="w-12 h-12 rounded-lg object-cover border-2 border-[#F9BE08]"
+              />
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-white/70 block">
+                  Your Proof Score
+                </span>
+                <div className="flex items-baseline gap-1.5 mt-0.5">
+                  <span className="text-2xl font-black font-mono text-[#F9BE08]">
+                    {userScore}
+                  </span>
+                  <span className="text-xs font-mono text-white/60">/ 100</span>
+                </div>
+                <span className="text-[10px] font-mono text-green-400 flex items-center gap-1 mt-0.5">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>Verified Builder Status</span>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Guest Locked Notice Banner */}
+      {!isAuthenticated && (
+        <div className="bg-[#FAF8F1] border border-[#DFDFD9] rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-subtle">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#1A1A19] text-[#F9BE08] flex items-center justify-center flex-shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs sm:text-sm text-[#1A1A19]">Job Application System is Locked</h4>
+              <p className="text-xs text-[#1A1A19]/60">Sign in or register to submit 1-click proof applications and chat directly with employers.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => openAuthModal('signin')}
+              className="flex-1 sm:flex-initial py-2 px-4 bg-white hover:bg-[#F9F8F4] text-[#1A1A19] text-xs font-bold rounded-lg border border-[#DFDFD9] transition-all"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => openAuthModal('signup', 'jobseeker')}
+              className="flex-1 sm:flex-initial py-2 px-4 bg-[#F9BE08] hover:bg-[#EFD30B] text-[#1A1A19] text-xs font-extrabold rounded-lg border border-[#F9BE08] transition-all shadow-subtle"
+            >
+              Sign Up Free
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. Filters & Search Bar */}
       <div className="bg-white border border-[#DFDFD9] rounded-xl p-4 shadow-subtle space-y-3">
