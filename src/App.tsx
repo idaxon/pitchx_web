@@ -11,6 +11,7 @@ import { BookmarksPage } from './pages/BookmarksPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { JobsPage } from './pages/JobsPage';
 import { RetestAssessmentPage } from './pages/RetestAssessmentPage';
+import { HiringPage } from './pages/HiringPage';
 import { AuthPage } from './pages/AuthPage';
 import { ProjectDetailModal } from './components/project/ProjectDetailModal';
 import { CreateProjectModal } from './components/project/CreateProjectModal';
@@ -54,6 +55,8 @@ const MainRouter: React.FC = () => {
         return <MessagesPage />;
       case 'jobs':
         return <JobsPage />;
+      case 'hiring':
+        return <HiringPage />;
       case 'retest':
         return <RetestAssessmentPage />;
       default:

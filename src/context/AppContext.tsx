@@ -34,6 +34,7 @@ export type PageType =
   | 'bookmarks'
   | 'messages'
   | 'jobs'
+  | 'hiring'
   | 'retest'
   | 'login'
   | 'signup';

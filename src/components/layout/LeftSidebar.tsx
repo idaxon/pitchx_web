@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
   Briefcase,
   Sparkles,
+  Building2,
 } from 'lucide-react';
 import { useApp, PageType } from '../../context/AppContext';
 
@@ -37,12 +38,14 @@ export const LeftSidebar: React.FC = () => {
 
   const isRecruiter = authRole === 'recruiter';
 
-  const navItems: { id: PageType; label: string; icon: React.ReactNode; badge?: string | number }[] = [
+  const navItems: { id: PageType; label: string; icon: React.ReactNode; badge?: string | number; recruiterOnly?: boolean }[] = [
     { id: 'home', label: 'Home Feed', icon: <Home className="w-4 h-4" /> },
     { id: 'explore', label: 'Explore Proofs', icon: <Compass className="w-4 h-4" /> },
     { id: 'profile', label: 'My Projects', icon: <FolderGit2 className="w-4 h-4" /> },
     { id: 'topic', label: 'Trending Topics', icon: <Hash className="w-4 h-4" /> },
     { id: 'jobs', label: 'Jobs & Hiring', icon: <Briefcase className="w-4 h-4" />, badge: '6 Roles' },
+    // Recruiter-only: full ATS command center
+    { id: 'hiring', label: 'Enterprise Hiring Hub', icon: <Building2 className="w-4 h-4" />, badge: isRecruiter ? 'ATS' : undefined, recruiterOnly: true },
     { id: 'bookmarks', label: 'Saved Proofs', icon: <Bookmark className="w-4 h-4" />, badge: savedCount > 0 ? savedCount : undefined },
     { id: 'messages', label: 'Discussions & DMs', icon: <MessageSquare className="w-4 h-4" /> },
     {
@@ -171,10 +174,10 @@ export const LeftSidebar: React.FC = () => {
 
         {/* View Profile / Recruiter Dashboard Button */}
         <button
-          onClick={() => isRecruiter ? navigateTo('jobs') : navigateTo('profile', { user: currentUser })}
+          onClick={() => isRecruiter ? navigateTo('hiring') : navigateTo('profile', { user: currentUser })}
           className="w-full mt-2 py-1.5 px-3 bg-white hover:bg-[#F9F8F4] text-[#1A1A19] text-xs font-semibold rounded-lg border border-[#DFDFD9] hover:border-[#1A1A19]/40 flex items-center justify-center gap-1 transition-all"
         >
-          <span>{isRecruiter ? 'Manage Applications' : 'View Profile'}</span>
+          <span>{isRecruiter ? 'Enterprise Hiring Hub' : 'View Profile'}</span>
           <ArrowUpRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -182,8 +185,11 @@ export const LeftSidebar: React.FC = () => {
       {/* 2. Main Navigation */}
       <nav className="bg-white border border-[#DFDFD9] rounded-xl p-2 shadow-subtle">
         <div className="space-y-0.5">
-          {navItems.map((item) => {
+          {navItems
+            .filter((item) => !item.recruiterOnly || isRecruiter)
+            .map((item) => {
             const isActive = activePage === item.id;
+            const isHiringItem = item.id === 'hiring';
             return (
               <button
                 key={item.id}
@@ -191,11 +197,13 @@ export const LeftSidebar: React.FC = () => {
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
                   isActive
                     ? 'bg-[#1A1A19] text-[#F9BE08]'
+                    : isHiringItem
+                    ? 'text-[#1A1A19] bg-[#F9BE08]/20 hover:bg-[#F9BE08]/40 border border-[#F9BE08]/50'
                     : 'text-[#1A1A19]/80 hover:text-[#1A1A19] hover:bg-[#F9F8F4]'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <span className={isActive ? 'text-[#F9BE08]' : 'text-[#1A1A19]/70'}>
+                  <span className={isActive ? 'text-[#F9BE08]' : isHiringItem ? 'text-[#1A1A19]' : 'text-[#1A1A19]/70'}>
                     {item.icon}
                   </span>
                   <span>{item.label}</span>
@@ -205,6 +213,8 @@ export const LeftSidebar: React.FC = () => {
                     className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
                       isActive
                         ? 'bg-[#F9BE08] text-[#1A1A19]'
+                        : isHiringItem
+                        ? 'bg-[#1A1A19] text-[#F9BE08]'
                         : 'bg-[#DFDFD9] text-[#1A1A19]'
                     }`}
                   >

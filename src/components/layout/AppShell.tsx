@@ -13,6 +13,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     activePage === 'analytics' ||
     activePage === 'explore' ||
     activePage === 'jobs' ||
+    activePage === 'hiring' ||
     (activePage === 'profile' && authRole === 'recruiter');
 
   return (
